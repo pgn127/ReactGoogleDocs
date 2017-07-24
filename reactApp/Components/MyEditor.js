@@ -28,11 +28,20 @@ class MyEditor extends React.Component {
     ));
   }
 
+  // onStyleChange(editorState, styleString) {
+  //     //takes in this.state.editorState and a string representing a style 'BOLD'
+  //     this.setState({editorState: RichUtils.toggleInlineStyle(
+  //       this.state.editorState,
+  //       styleString
+  //     )})
+  // }
+
   render() {
     return (
       <div >
           IN EDITOR. CODE IS WORKING.
           <button onClick={this._onBoldClick.bind(this)}>Bold</button>
+          {/* <button onClick={() => this.onChange(this.state.editorState, 'BOLD')}>Bold</button> */}
           <div style={{border: '1px solid black'}} className="editor">
               <Editor customStyleMap={styleMap} editorState={this.state.editorState} onChange={this.onChange} />
           </div>
