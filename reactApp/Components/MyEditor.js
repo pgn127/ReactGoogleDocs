@@ -26,11 +26,10 @@ class MyEditor extends React.Component {
 
     this.onChange = (editorState) => this.setState({editorState});
     this.focus = () => this.refs.editor.focus();
-    // this.handleKeyCommand = (command) => this._handleKeyCommand(command);
   }
 
 
-//USED FOR BOLD,
+//USED FOR BOLD, and styles supported by FontStyles.js
   _toggleInlineStyle(inlineStyle) {
       this.onChange( RichUtils.toggleInlineStyle(this.state.editorState,inlineStyle));
 }
@@ -49,13 +48,7 @@ _toggleBlockType(blockType) {
 
   render() {
     return (
-      <div >
-          {/* <ButtonToolbar
-              //   onBoldClick={() => this.onBoldClick()}
-              onInlineToggle={(stylename) => this._toggleInlineStyle(stylename)}
-              onBlockToggle={(blockType) => this._toggleBlockType(blockType)}
-
-          /> */}
+      <div>
           <div className="btn-toolbar">
               <div className="btn-group">
                   <FontStyles
