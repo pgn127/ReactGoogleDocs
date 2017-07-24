@@ -79,15 +79,15 @@ import ReactDOM from 'react-dom';
         }
 
         render() {
-          let className = styleButton;
+          let className = this.props.label;
           if (this.props.active) {
             className = activeButton;
           }
-
+//style={className}
           return (
-            <span style={className} onMouseDown={this.onToggle}>
-              {this.props.label}
-            </span>
+            <button className={this.props.label} onMouseDown={this.onToggle}>
+              {/* {this.props.label} */}
+            </button>
           );
         }
       }
