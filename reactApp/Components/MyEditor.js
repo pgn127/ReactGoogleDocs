@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import 'draft-js/dist/Draft.css';
-import ButtonToolbar from './ButtonToolbar.js';
+// import ButtonToolbar from './ButtonToolbar.js';
 import FontStyles from './FontStyles.js';
 import BlockStyles from './BlockStyles.js';
 import {Editor, EditorState, RichUtils} from 'draft-js';
@@ -39,10 +39,6 @@ class MyEditor extends React.Component {
 _toggleBlockType(blockType) {
     this.onChange(RichUtils.toggleBlockType(this.state.editorState, blockType));
 }
-  //
-  // _handleKeyCommand(command) {
-  //       this.onChange(RichUtils.handleKeyCommand(this.state.editorState, command))
-  //   }
 
   _onTab(e) {
       const maxDepth = 8;
@@ -76,15 +72,13 @@ _toggleBlockType(blockType) {
           </div>
           <div style={{border: '1px solid black'}} className="editor">
               <Editor
-
+                  customStyleMap={styleMap}
                   editorState={this.state.editorState}
                   onChange={this.onChange}
                   onTab={this._onTab.bind(this)}
               />
           </div>
-            <div style={{border: '1px solid black'}} className="editor">
-              <Editor customStyleMap={styleMap} editorState={this.state.editorState} onChange={this.onChange} />
-            </div>
+
       </div>
     );
   }
