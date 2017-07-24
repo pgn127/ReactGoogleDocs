@@ -2,28 +2,30 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import 'draft-js/dist/Draft.css';
 import ButtonToolbar from './ButtonToolbar.js';
+import FontStyles from './FontStyles.js';
+import BlockStyles from './BlockStyles.js';
 import {Editor, EditorState, RichUtils} from 'draft-js';
 
 
-// const styleMap = {
-//   'STRIKETHROUGH': {
-//     textDecoration: 'line-through',
-// },
-// 'BOLD': {
-//     fontWeight: 'bold'
-// }
-// };
 
-
+const styleMap = {
+  'STRIKETHROUGH': {
+    textDecoration: 'line-through',
+  },
+  'BOLD': {
+    fontWeight: 'bold'
+  }
+};
 
 class MyEditor extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-        editorState: EditorState.createEmpty()
+      editorState: EditorState.createEmpty()
     };
 
     this.onChange = (editorState) => this.setState({editorState});
+    this.focus = () => this.refs.editor.focus();
     // this.handleKeyCommand = (command) => this._handleKeyCommand(command);
   }
 
@@ -52,24 +54,38 @@ _toggleBlockType(blockType) {
   render() {
     return (
       <div >
-          <ButtonToolbar
+          {/* <ButtonToolbar
               //   onBoldClick={() => this.onBoldClick()}
               onInlineToggle={(stylename) => this._toggleInlineStyle(stylename)}
               onBlockToggle={(blockType) => this._toggleBlockType(blockType)}
 
-          />
+          /> */}
+          <div className="btn-toolbar">
+              <div className="btn-group">
+                  <FontStyles
+                      editorState={this.state.editorState}
+                      onToggle={this._toggleInlineStyle.bind(this)}
+                  />
+              </div>
+              <div className="btn-group">
+                  <BlockStyles
+                      editorState={this.state.editorState}
+                      onToggle={this._toggleBlockType.bind(this)}
+                  />
+              </div>
+          </div>
           <div style={{border: '1px solid black'}} className="editor">
               <Editor
 
-                  //   customStyleMap={styleMap}
                   editorState={this.state.editorState}
                   onChange={this.onChange}
                   onTab={this._onTab.bind(this)}
-                  //   handleKeyCommand={this.handleKeyCommand}
-                  //   onTab={() => this.handleTab(event)}
               />
           </div>
-        </div>
+            <div style={{border: '1px solid black'}} className="editor">
+              <Editor customStyleMap={styleMap} editorState={this.state.editorState} onChange={this.onChange} />
+            </div>
+      </div>
     );
   }
 }
