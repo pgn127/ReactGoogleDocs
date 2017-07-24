@@ -1,0 +1,17 @@
+html, body {
+  height: 100%;
+  padding: 10px 60px 10px 60px;
+
+}
+
+.editorBox {
+    /*border: 1px solid black;*/
+    color: blue;
+    height: 500px;
+    width: 500px;
+}
+
+.editor {
+    border: 1px solid black;
+    padding: 50px
+}
