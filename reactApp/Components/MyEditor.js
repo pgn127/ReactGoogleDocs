@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import ButtonToolbar from './ButtonToolbar.js';
 import {Editor, EditorState, RichUtils} from 'draft-js';
 
 
@@ -42,6 +43,8 @@ class MyEditor extends React.Component {
           IN EDITOR. CODE IS WORKING.
           <button onClick={this._onBoldClick.bind(this)}>Bold</button>
           {/* <button onClick={() => this.onChange(this.state.editorState, 'BOLD')}>Bold</button> */}
+
+          <ButtonToolbar />
           <div style={{border: '1px solid black'}} className="editor">
               <Editor customStyleMap={styleMap} editorState={this.state.editorState} onChange={this.onChange} />
           </div>
