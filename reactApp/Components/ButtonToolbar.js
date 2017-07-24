@@ -15,9 +15,11 @@ class ButtonToolbar extends React.Component {
   render() {
     return (
       <div className="btn-toolbar">
-        <div className="btn-group">
-          <button className="btn"><i className="icon-bold"></i></button>
-          <button className="btn"><i className="icon-italic"></i></button>
+          <div className="btn-group">
+              <button onClick={() => this.props.onBoldClick()} className="btn">
+                  <i className="icon-bold"></i>
+              </button>
+              <button className="btn"><i className="icon-italic"></i></button>
           <button className="btn"><i className="icon-list"></i></button>
           <button className="btn"><i className="icon-picture"></i></button>
           <button className="btn"><i className="icon-arrow-right"></i></button>
