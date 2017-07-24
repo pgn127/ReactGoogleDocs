@@ -46,7 +46,7 @@ class MyEditor extends React.Component {
 
           <ButtonToolbar
               onBoldClick={() => this.onBoldClick()}
-              
+
           />
           <div style={{border: '1px solid black'}} className="editor">
               <Editor customStyleMap={styleMap} editorState={this.state.editorState} onChange={this.onChange} />
