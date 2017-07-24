@@ -1,17 +1,20 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import 'draft-js/dist/Draft.css';
 import ButtonToolbar from './ButtonToolbar.js';
 import {Editor, EditorState, RichUtils} from 'draft-js';
 
 
-const styleMap = {
-  'STRIKETHROUGH': {
-    textDecoration: 'line-through',
-},
-'BOLD': {
-    fontWeight: 'bold'
-}
-};
+// const styleMap = {
+//   'STRIKETHROUGH': {
+//     textDecoration: 'line-through',
+// },
+// 'BOLD': {
+//     fontWeight: 'bold'
+// }
+// };
+
+
 
 class MyEditor extends React.Component {
   constructor(props) {
@@ -19,37 +22,52 @@ class MyEditor extends React.Component {
     this.state = {
         editorState: EditorState.createEmpty()
     };
+
     this.onChange = (editorState) => this.setState({editorState});
+    // this.handleKeyCommand = (command) => this._handleKeyCommand(command);
   }
 
-  onBoldClick() {
-    this.onChange(RichUtils.toggleInlineStyle(
-      this.state.editorState,
-      'BOLD'
-    ));
+
+//USED FOR BOLD,
+  _toggleInlineStyle(inlineStyle) {
+      this.onChange( RichUtils.toggleInlineStyle(this.state.editorState,inlineStyle));
+}
+
+//USED FOR: unorderedlist, orderedlist
+_toggleBlockType(blockType) {
+    this.onChange(RichUtils.toggleBlockType(this.state.editorState, blockType));
+}
+  //
+  // _handleKeyCommand(command) {
+  //       this.onChange(RichUtils.handleKeyCommand(this.state.editorState, command))
+  //   }
+
+  _onTab(e) {
+      const maxDepth = 8;
+      this.onChange(RichUtils.onTab(e, this.state.editorState, maxDepth));
   }
 
-  // onStyleChange(editorState, styleString) {
-  //     //takes in this.state.editorState and a string representing a style 'BOLD'
-  //     this.setState({editorState: RichUtils.toggleInlineStyle(
-  //       this.state.editorState,
-  //       styleString
-  //     )})
-  // }
+
 
   render() {
     return (
       <div >
-          IN EDITOR. CODE IS WORKING.
-          {/* <button onClick={this._onBoldClick.bind(this)}>Bold</button> */}
-          {/* <button onClick={() => this.onChange(this.state.editorState, 'BOLD')}>Bold</button> */}
-
           <ButtonToolbar
-              onBoldClick={() => this.onBoldClick()}
+              //   onBoldClick={() => this.onBoldClick()}
+              onInlineToggle={(stylename) => this._toggleInlineStyle(stylename)}
+              onBlockToggle={(blockType) => this._toggleBlockType(blockType)}
 
           />
           <div style={{border: '1px solid black'}} className="editor">
-              <Editor customStyleMap={styleMap} editorState={this.state.editorState} onChange={this.onChange} />
+              <Editor
+
+                  //   customStyleMap={styleMap}
+                  editorState={this.state.editorState}
+                  onChange={this.onChange}
+                  onTab={this._onTab.bind(this)}
+                  //   handleKeyCommand={this.handleKeyCommand}
+                  //   onTab={() => this.handleTab(event)}
+              />
           </div>
         </div>
     );
