@@ -26,7 +26,7 @@ import ReactDOM from 'react-dom';
           }
 //style={className}
           return (
-            <button className={this.props.label} style={this.props.active ? activeButton: {}} onMouseDown={this.onToggle}>
+            <button className={this.props.label+' styleButton'} style={this.props.active ? activeButton: {}} onMouseDown={this.onToggle}>
               {/* {this.props.label} */}
             </button>
           );

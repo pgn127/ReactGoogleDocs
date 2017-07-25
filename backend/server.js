@@ -10,7 +10,7 @@ const routes = require('./routes/routes');
 const auth = require('./routes/auth');
 const mongoose = require('mongoose');
 const app = express()
-
+const models = require('./models/models.js')
 
 
 
@@ -34,19 +34,21 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 passport.serializeUser(function(user, done) {
+  console.log("SERIALIZAE");
   done(null, user._id);
 });
 
 passport.deserializeUser(function(id, done) {
+  console.log("DESERIAL");
   models.User.findById(id, function(err, user) {
     done(err, user);
   });
 });
 
 // passport strategy
-passport.use(new LocalStrategy(function(username, password, done) {
-    // Find the user with the given username
-    models.User.findOne({ username: username }, function (err, user) {
+passport.use(new LocalStrategy({usernameField:"name", passwordField:"password"}, function(name, password, done) {
+    console.log("LOCAL");
+    models.User.findOne({ name: name }, function (err, user) {
       // if there's an error, finish trying to authenticate (auth failed)
       if (err) {
         console.error(err);

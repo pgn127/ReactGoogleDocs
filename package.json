@@ -33,12 +33,15 @@
     "eslint-plugin-react": "^5.2.2"
   },
   "dependencies": {
+    "body-parser": "^1.17.2",
     "bulma": "^0.4.4",
     "css-loader": "^0.28.4",
     "draft-js": "^0.10.1",
     "express": "^4.15.3",
     "history": "^4.6.3",
+    "immutable": "^3.8.1",
     "material-ui": "^0.18.7",
+    "mdi": "^2.0.46",
     "mongoose": "^4.11.4",
     "passport": "^0.3.2",
     "passport-local": "^1.0.0",
