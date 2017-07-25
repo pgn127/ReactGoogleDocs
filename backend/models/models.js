@@ -15,6 +15,10 @@ var userSchema = new Schema({
 
 //owning user is also a collaborator
 var documentSchema = new Schema({
+    title: {
+        type: String,
+        default: 'Untitled Document'
+    },
   author: {
      type: mongoose.Schema.Types.ObjectId,
      ref: 'User'
@@ -29,10 +33,28 @@ var documentSchema = new Schema({
   },
   dateCreated: String,
 })
+var Document = mongoose.model('Document', documentSchema);
+
+// userSchema.methods.getAllDocuments = function (callback){
+//   var userid = this._id;
+//   Document.find({collaborators: {$all: [userid]}})
+//   .populate('userId').exec(function(err,reviews){
+//     callback(err,reviews);
+//   })
+// }
+
+userSchema.methods.getAllDocuments = function (callback){
+  var userid = this._id;
+  //find all documents where userid is present inthe array of collaborators
+  Document.find({collaborators: {$all: [userid]}})
+  .exec(function(err,documents){
+      console.log('documents are ', documents);
+    callback(err,documents);
+  })
+}
 
 
 var User = mongoose.model('User', userSchema);
-var Document = mongoose.model('Document', documentSchema);
 module.exports = {
   User: User,
   Document: Document
