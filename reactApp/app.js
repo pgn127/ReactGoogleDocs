@@ -14,6 +14,7 @@ import injectTapEventPlugin from 'react-tap-event-plugin';
 import 'bulma/css/bulma.css'
 import '../build/style.css'
 import 'draft-js/dist/Draft.css';
+// import 'css/materialdesignicons.min.css'
 // import 'font-awesome/css/font-awesome.css'
 
 

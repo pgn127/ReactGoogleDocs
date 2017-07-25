@@ -5,6 +5,9 @@ import 'draft-js/dist/Draft.css';
 import FontStyles from './FontStyles.js';
 import BlockStyles from './BlockStyles.js';
 import RaisedButton from 'material-ui/RaisedButton';
+import FlatButton from 'material-ui/FlatButton';
+import IconButton from 'material-ui/IconButton';
+import FontIcon from 'material-ui/FontIcon';
 import AppBar from 'material-ui/AppBar';
 import {Editor, EditorState, RichUtils} from 'draft-js';
 
@@ -58,9 +61,11 @@ _toggleBlockType(blockType) {
     return (
       <div >
           <AppBar title={this.state.documentName}/>
-
           <div className="docContainer">
 
+              {/* <IconButton tooltip="Font Icon">
+                  <FontIcon className="muidocs-icon-action-home" />
+              </IconButton> */}
               <div className="btn-toolbar editorToolbar">
                       <div className="btn-group">
                           <FontStyles

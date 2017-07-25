@@ -38,6 +38,7 @@
     "draft-js": "^0.10.1",
     "express": "^4.15.3",
     "material-ui": "^0.18.7",
+    "mdi": "^2.0.46",
     "mongoose": "^4.11.4",
     "react": "^15.6.1",
     "react-dom": "^15.6.1",
