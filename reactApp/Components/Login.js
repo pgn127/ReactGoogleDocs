@@ -2,7 +2,9 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import {Route, Link, Switch } from 'react-router-dom';
 import Register from './Register'
-import 'draft-js/dist/Draft.css';
+// import 'draft-js/dist/Draft.css';
+// import 'bulma/css/bulma.css'
+// import '../../build/style.css'
 
 
 export default class Login extends React.Component {

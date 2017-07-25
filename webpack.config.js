@@ -18,7 +18,7 @@ module.exports = {
           }
         }
     },
-     { test: /\.s?css$/, loader: 'style-loader!css-loader' },
+     { test: /\.s?css$/, loader: ['style-loader','css-loader'] },
     ]
   },
   stats: {
