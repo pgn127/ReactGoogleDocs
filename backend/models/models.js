@@ -43,6 +43,27 @@ var Document = mongoose.model('Document', documentSchema);
 //   })
 // }
 
+userSchema.methods.getCollaboratedDocuments = function (callback){
+  var userid = this._id;
+  //find all documents where user is oNLY A COLLABORATOR, NOT OWNER
+  //find all documents where authorid!=userid but user present in the collaborators array
+  Document.find({author: {$nin: [userid]}, collaborators: {$all: [userid]}})
+  .exec(function(err,documents){
+      console.log('documents only collaborate are ', documents);
+    callback(err,documents);
+  })
+}
+
+userSchema.methods.getOwnedDocuments = function (callback){
+  var userid = this._id;
+  //find all documents where userid is present inthe array of collaborators
+  Document.find({author: userid})
+  .exec(function(err,documents){
+      console.log('documents owned by user are are ', documents);
+    callback(err,documents);
+  })
+}
+
 userSchema.methods.getAllDocuments = function (callback){
   var userid = this._id;
   //find all documents where userid is present inthe array of collaborators
