@@ -1,17 +1,41 @@
 html, body {
   height: 100%;
-  padding: 10px 60px 10px 60px;
+  /*padding: 10px 30px 10px 30px;*/
+  background-color: #EEEEEE;
 
 }
 
-.editorBox {
+#root, #root>div {
+    height: 100%;
+}
+
+.editorToolbar {
+    border: 1px solid #D9D9D9;
+    width: 100%;
+    padding: 5px;
+    margin-top: 0px;
+}
+.docContainer {
     /*border: 1px solid black;*/
-    color: blue;
+    /*color: blue;
     height: 500px;
-    width: 500px;
+    width: 500px;*/
+    height: 100%;
+    /*margin: 30px 50px 30px 50px;*/
+    /*border: 1px solid red;*/
+    /*background-color: '#EEEEEE'*/
 }
+
+
 
 .editor {
-    border: 1px solid black;
-    padding: 50px
+    /*border: 1px solid black;*/
+    -webkit-box-shadow: 0px 0px 5px 1px rgba(153,153,153,1);
+-moz-box-shadow: 0px 0px 5px 1px rgba(153,153,153,1);
+box-shadow: 0px 0px 5px 1px rgba(153,153,153,1);
+    padding: 10px;
+    height: 100%;
+    background-color: white;
+    margin: 30px 50px 30px 50px;
+    min-height: 500px;
 }

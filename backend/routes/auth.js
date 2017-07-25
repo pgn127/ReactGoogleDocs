@@ -24,11 +24,11 @@ module.exports = function(passport) {
 
   router.post('/register', function(req, res) {
     console.log('register');
-    if (!validateReq(req.body)) {
-      return res.json({
-        error: "Passwords don't match."
-      });
-    }
+    // if (!validateReq(req.body)) {
+    //   return res.json({
+    //     error: "Passwords don't match."
+    //   });
+    // }
     var u = new models.User({
       name: req.body.name,
       password: req.body.password,
@@ -42,7 +42,7 @@ module.exports = function(passport) {
         return;
       }
       console.log(user);
-      res.redirect('/login');
+      res.status(200).json({success:true});
     });
   });
 

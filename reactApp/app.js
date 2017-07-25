@@ -6,13 +6,35 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { Router, Route } from 'react-router';
 import Root from './Components/Root.js'
+import createHashHistory from 'history/createHashHistory';
+import MyEditor from './Components/MyEditor.js'
+import Login from './Components/Login.js'
 import {Editor, EditorState} from 'draft-js';
+import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
+import injectTapEventPlugin from 'react-tap-event-plugin';
+import 'bulma/css/bulma.css'
+import '../build/style.css'
+import 'draft-js/dist/Draft.css';
+//import 'font-awesome/css/font-awesome.css'
+import Routes from './Routes.js';
 
+const history = createHashHistory();
 
-
+const App = () => (
+  <MuiThemeProvider>
+      <MyEditor />
+  </MuiThemeProvider>
+);
 
 ReactDOM.render(
-  <Root />,
+
+  <MuiThemeProvider>
+    <Root history={history}/>
+  </MuiThemeProvider>,
+
+  //<App />,
+
   document.getElementById('root')
 );

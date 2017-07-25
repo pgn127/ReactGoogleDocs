@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { BrowserRouter, Route, Switch , Link  } from 'react-router-dom';
+import Login from './Login'
 import 'draft-js/dist/Draft.css';
 
 
@@ -11,6 +12,7 @@ export default class Register extends React.Component {
     };
 
   }
+
 
   render() {
     return (
@@ -37,7 +39,7 @@ export default class Register extends React.Component {
             <div className="field">
                 <p className="control">
                     <button className="button is-success" >
-                        <Link to='/login'>Register</Link>
+                        <Link to='/'>Register</Link>
                     </button>
                 </p>
             </div>

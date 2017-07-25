@@ -1,5 +1,6 @@
 import React from 'react';
-import { BrowserRouter, Route, Switch , Link  } from 'react-router-dom';
+// import { BrowserRouter, Route, Switch , Link  } from 'react-router-dom';
+import { Router, Route, Switch } from 'react-router';
 import Login from './Login.js'
 import Directory from './Directory';
 import MyEditor from './MyEditor'
@@ -27,26 +28,12 @@ class Root extends React.Component {
   render() {
 
     return (
-      <BrowserRouter>
-        <div>
-          {/* <Route path='/directory' render={() => <Link to={'/'}>Back to Home</Link>} /> */}
-          {/* In a Switch, only the 1st matched route renders.*/}
-          {/* {this.state.loggedIn ? <MyEditor /> : <Login />} */}
-          {/* <Switch> */}
-            {/* <Route path="/" component={Login}> */}
-
-            {/* <Switch> */}
-              <Route path="/" component={Login} />
-              <Route path="/login" component={Login} />
-              <Route path="/register" component={Register} />
-              <Route path="/directory" component={Directory} />
-            {/* </Route> */}
-
-            {/* A route with no path is matched unconditionally.*/}
-            <Route render={() => <h1>404</h1>} />
-          {/* </Switch> */}
-        </div>
-      </BrowserRouter>
+      <Router history={this.props.history}  >
+        <Switch>
+          <Route exact path="/" component={Login}/>
+          <Route exact path="/register" component={Register}/>
+        </Switch>
+      </Router>
     );
   }
 };
