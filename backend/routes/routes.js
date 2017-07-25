@@ -100,18 +100,60 @@ router.get('/documents/collaborate/:userId', function(req,res) {
     })
 })
 
+//triggered when you click save on a document
+//req.body should contain the fields to update
+router.post('/documents/save/:documentId', function(req,res) {
+    var docId = req.params.documentId;
+    var docTitle = req.body.title;
+    var docPassword = req.body.password;
+    var docContent = req.body.content;
+    var docCollaborators = req.body.collaborators;
+
+    Document.findById(docId, function(err, doc) {
+        if(err){
+            console.log('error finding document in the save', err);
+            res.status(500).json({err: err})
+        } else{
+            if(doc) {
+                doc.title = docTitle || doc.title;
+                doc.content = docContent || doc.content;
+                doc.collaborators = docCollaborators || doc.collaborators;
+                doc.password = docPassword || doc.password;
+                doc.save(function(err, updatedDoc) {
+                    if(err){
+                        console.log('error updating  doc', err);
+                        res.status(400).json({error: err})
+                    } else {
+                        console.log('successful update', updatedDoc);
+                        res.status(200).json({success: true, document: updatedDoc}) //if document update is successful, send successful response with the document
+                    }
+                })
+            } else {
+                console.log('document not found, cant update', err);
+                res.status(400).json({err: err})
+            }
+
+        }
+    })
+})
+
+
 //post to create a new document
+//the body should include the document content, the title, the password
 router.post('/documents/new/:authorId', function(req,res) {
     console.log('entered new docs route');
      var userId = req.params.authorId;
      var docTitle = req.body.title;
+     var docPassword = req.body.password || '';
+     var docContent = req.body.content || '';
 
      var newDocument = new Document({
-         title: docTitle ,
+         title: docTitle,
          author: userId,
-         collaborators: [userId],
-         shareLink: 'sharelink.com',
-        //  password: '',
+         collaborators: [userId], //TODO: can u specify collaborators upon document creation
+         shareLink: 'sharelink.com', //TODO:
+         content: docContent,
+         password: docPassword,
          dateCreated: Date.now().toString(),
          })
 

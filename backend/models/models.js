@@ -27,6 +27,7 @@ var documentSchema = new Schema({
         type: mongoose.Schema.ObjectId,
         ref: 'User'
   }],
+  content: String,
   shareLink: String,
   password: {
          type: String,
