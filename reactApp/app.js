@@ -6,13 +6,13 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom';
-import MyEditor from './Components/MyEditor.js'
+import Root from './Components/Root.js'
 import {Editor, EditorState} from 'draft-js';
 
 
 
 
 ReactDOM.render(
-  <MyEditor />,
+  <Root />,
   document.getElementById('root')
 );
