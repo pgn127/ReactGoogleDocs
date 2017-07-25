@@ -9,12 +9,27 @@ var bodyParser = require('body-parser');
 router.use(bodyParser.urlencoded({extended: false}));
 router.use(bodyParser.json());
 
-router.get('/', function (req, res) {
-  res.send('Hello World!')
+
+
+router.get('/isLoggedIn', function (req, res) {
+  if (!req.user) {
+    res.send({loggedIn: false});
+  } else {
+    res.send({loggedIn: true});
+  }
 })
+
+router.use(function(req, res, next){
+  if (!req.user) {
+    res.send({error: "User is not logged in."});
+  } else {
+    return next();
+  }
+});
 
 //get all documents where user is an owner OR collaborator
 router.get('/documents/all/:userId', function(req,res) {
+
     var userId = req.params.userId;
     User.findById(userId, function(err, user){
         if(err){
