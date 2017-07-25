@@ -29,6 +29,17 @@ html, body {
     /*background-color: '#EEEEEE'*/
 }
 
+.align-right div {
+  text-align: right !important;
+}
+
+.align-left div {
+  text-align: left !important;
+}
+
+.align-center div {
+  text-align: center !important;
+}
 
 
 .editor {
