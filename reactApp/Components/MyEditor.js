@@ -27,7 +27,7 @@ const styleMap = {
     'color': 'black'
   },
   'FONT-SIZE': {
-     'fontSize': '12px'
+     'fontSize': '12'
   },
   'TEXT-ALIGN-LEFT': {
       'textAlign': 'left'
@@ -61,7 +61,33 @@ class MyEditor extends React.Component {
     super(props);
     this.state = {
       editorState: EditorState.createEmpty(), //editorState from draftjs
-      documentName: 'Document Name'
+      documentName: 'Document Name',
+      styleMap: {
+        'BOLD': {
+          fontWeight: 'bold'
+        },
+        'ITALIC': {
+           'fontStyle': 'italic'
+        },
+        'UNDERLINE': {
+           'textDecoration': 'underline'
+        },
+        'FONT-COLOR': {
+          'color': 'black'
+        },
+        'FONT-SIZE': {
+           'fontSize': '12px'
+        },
+        'TEXT-ALIGN-LEFT': {
+            'textAlign': 'left'
+        },
+        'TEXT-ALIGN-CENTER': {
+            'textAlign': 'center'
+        },
+        'TEXT-ALIGN-RIGHT': {
+            'textAlign': 'right'
+        }
+      }
     };
 
     this.onChange = (editorState) => this.setState({editorState});
@@ -98,26 +124,37 @@ myBlockStyleFn(contentBlock) {
   return "";
 }
 
-onFontSizeClick(fontSize) {
-   var parsed = parseInt(fontSize);
-   styleMap['FONT-SIZE-' + fontSize] = {
-      'fontSize': parsed + 'px'
-   };
-   console.log(styleMap);
-   this.onChange(RichUtils.toggleInlineStyle(
-     this.state.editorState,
-     'FONT-SIZE-' + fontSize
-   ));
+onFontSizeIncreaseClick() {
+  console.log(this.state.styleMap['FONT-SIZE']['fontSize'])
+  var font = this.state.styleMap['FONT-SIZE']['fontSize'];
+  var fontSize = parseInt(font.slice(0, font.indexOf('p')));
+  fontSize += 2;
+  this.state.styleMap['FONT-SIZE']['fontSize'] = fontSize.toString() + 'px';
+  this.onChange(RichUtils.toggleInlineStyle(
+    this.state.editorState,
+    'FONT-SIZE'
+  ));
  }
 
- onFontColorClick(fontColor) {
-   styleMap['FONT-COLOR-' + fontColor] = {
-      'color': fontColor
-   };
-   console.log(styleMap);
+ onFontSizeDecreaseClick() {
+   var font = this.state.styleMap['FONT-SIZE']['fontSize'];
+   var fontSize = parseInt(font.slice(0, font.indexOf('p')));
+   fontSize -= 2;
+   this.state.styleMap['FONT-SIZE']['fontSize'] = fontSize.toString() + 'px';
    this.onChange(RichUtils.toggleInlineStyle(
      this.state.editorState,
-     'FONT-COLOR-' + fontColor
+     'FONT-SIZE'
+   ));
+  }
+
+ onFontColorClick(fontColor) {
+   var hex = fontColor.hex;
+   this.state.styleMap['FONT-COLOR-' + hex] = {
+      'color': hex
+   };
+   this.onChange(RichUtils.toggleInlineStyle(
+     this.state.editorState,
+     'FONT-COLOR-' + hex
    ));
  }
 
@@ -142,7 +179,8 @@ onFontSizeClick(fontSize) {
                       <FontStyles
                           editorState={this.state.editorState}
                           onToggle={this._toggleInlineStyle.bind(this)}
-                          onFontSizeClick={(fontSize) => this.onFontSizeClick(fontSize)}
+                          onFontSizeIncreaseClick={() => this.onFontSizeIncreaseClick()}
+                          onFontSizeDecreaseClick={() => this.onFontSizeDecreaseClick()}
                           onFontColorClick={(fontColor) => this.onFontColorClick(fontColor)}
                       />
                   </div>
@@ -155,7 +193,7 @@ onFontSizeClick(fontSize) {
               </div>
               <div className="editor">
                   <Editor
-                      customStyleMap={styleMap}
+                      customStyleMap={this.state.styleMap}
                       editorState={this.state.editorState}
                       onChange={this.onChange}
                       onTab={this._onTab.bind(this)}
