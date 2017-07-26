@@ -10,6 +10,7 @@ import Directory from './Directory'
 // import 'draft-js/dist/Draft.css';
 // import 'bulma/css/bulma.css'
 // import '../../build/style.css'
+import axios from 'axios'
 import AppBar from 'material-ui/AppBar';
 import Divider from 'material-ui/Divider';
 import Paper from 'material-ui/Paper';
@@ -41,7 +42,41 @@ export default class Login extends React.Component {
     }
   }
   handleSubmit(){
-    console.log("in submit");
+    // console.log("in submit login ");
+
+//     axios({
+//         method: 'post',
+//         url: 'http://localhost:3000/login',
+//   data: {
+//       email: this.state.email,
+//       password: this.state.password
+//   },
+//   headers : {
+//         "Content-Type" : "application/json"
+//       },
+//       transformRequest: [(data) => {
+//         return JSON.stringify(data);
+//       }]
+// })
+// .then(function (response) {
+//   console.log('axios ', response);
+// })
+// .catch(function (error) {
+//   console.log('axios error ', error);
+// });
+
+  //   axios.post('/login', {
+  //       email: this.state.email,
+  //       password: this.state.password
+  // })
+  // .then(function (response) {
+  //   console.log('axios ', response);
+  // })
+  // .catch(function (error) {
+  //   console.log('axios error ', error);
+  // });
+
+
     fetch('http://localhost:3000/login', {
       credentials: 'include',
       method: 'POST',
@@ -50,15 +85,22 @@ export default class Login extends React.Component {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        name: this.state.email,
+        email: this.state.email,
         password: this.state.password
       })
     })
-    .then((response) => response.json())
+    .then((response) => {
+        console.log('response of login is ', response);
+        return response.json()
+    })
     .then((resp) => {
       console.log(resp.user);
       this.props.store.set('userId', resp.user._id);
       this.setState({email: '', password: '', loggedin: true, user: resp.user});
+    })
+    .catch( (err) => {
+        console.log('caught error in handle submit of login ', err);
+        alert(`error in handlesubmit of login ${err}`)
     })
   }
   render() {

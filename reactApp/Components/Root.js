@@ -28,7 +28,7 @@ class Root extends React.Component {
       return response.json()
     })
     .then((resp) => {
-      console.log("pulled resp", resp);
+    //   console.log("pulled resp", resp);
       this.setState({loggedIn: resp.loggedIn});
     })
     .catch((err)=>console.log(err))
@@ -40,14 +40,14 @@ class Root extends React.Component {
       <Router history={this.props.history}  store={this.props.store}>
 
 
-        <Switch>
-          {/* <Route exact path="/" component={Login}/> */}
-          <Route exact path="/" render={(props) => <Login store={this.props.store}/>}/>
-          <Route exact path="/register" component={Register}/>
-          <Route exact path="/directory/" render={(props) => <Directory store={this.props.store}/>} />
-          <Route path="/editor/:docId" render={(props) => <MyEditor {...props} store={this.props.store}/>} />
-          <Route path ="/" component={Login}/>
-        </Switch>
+          <Switch>
+              {/* <Route exact path="/" component={Login}/> */}
+              <Route exact path="/" render={(props) => <Login store={this.props.store}/>}/>
+              <Route exact path="/register" component={Register}/>
+              <Route exact path="/directory/" render={(props) => <Directory store={this.props.store}/>} />
+              <Route path="/editor/:docId" render={(props) => <MyEditor {...props} store={this.props.store}/>} />
+              <Route path ="/" component={Login}/>
+          </Switch>
       </Router>
     );
   }

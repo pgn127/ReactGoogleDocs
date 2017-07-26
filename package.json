@@ -33,6 +33,7 @@
     "eslint-plugin-react": "^5.2.2"
   },
   "dependencies": {
+    "axios": "^0.16.2",
     "body-parser": "^1.17.2",
     "bulma": "^0.4.4",
     "connect-mongo": "^1.3.2",
