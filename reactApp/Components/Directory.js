@@ -20,19 +20,17 @@ class Directory extends React.Component {
   constructor(props){
     super(props);
     this.state = {
-      fakeUser: {
-        _id: '597797018cccf651b76f25ac',
-        name: 'Frankie',
-        password: 'Frankie1!',
-        email: 'fflores@colgate.edu',
-      },
       user: {},
       documents: [{_id:0, title:"You do not have any documents yet!", dateCreated: Date.now()}],
       value: 1,
       isOpen: false,
+      isDocModalOpen: false,
+      isPassModalOpen: false,
+      passwordGuess: '',
       docName: '',
       docPass: '',
       newDocId: '',
+      selectedDoc: {},
       loggedIn: true,
       isDocModalOpen: false,
       isPassModalOpen: false,
@@ -40,12 +38,14 @@ class Directory extends React.Component {
   }
 
   componentWillMount(){
-    console.log(this.props.store.get('user'));
+    console.log('user from store', this.props.store.get('user'));
     const user = this.props.store.get('user')
     this.setState({user: user})
+
   }
-  componentDidMount(){
-    this.ownedByAll()
+
+  componentDidMount() {
+      this.ownedByAll()
   }
   logout(){
     fetch('http://localhost:3000/logout')
@@ -114,7 +114,7 @@ class Directory extends React.Component {
         this.setState({documents: resp.documents})
       }
     })
-    .catch((err)=>console.log(err))
+    .catch((err)=>console.log('error in finding all owned docuemnts', err))
   }
 
 
@@ -139,14 +139,23 @@ class Directory extends React.Component {
       anchorEl: event.currentTarget,
       value: event.currentTarget.value,
       isDocModalOpen: false,
+      isPassModalOpen: false
     });
   };
-  onModalOpen(){
-    this.setState({isDocModalOpen: true});
+  onModalOpen(modalType){
+    let stateCopy = Object.assign({}, this.state);
+    stateCopy[modalType] = true;
+    this.setState(stateCopy);
+    console.log('this.state.modaltype',modalType, this.state, this.state[modalType]);
   };
-  onModalClose(){
-    this.setState({isDocModalOpen: false});
+  onModalClose(modalType){
+    //   let stateCopy = Object.assign({}, this.state, {passwordGuess: ''});
+      let stateCopy = Object.assign({}, this.state);
+      stateCopy[modalType] = false;
+      this.setState(stateCopy);
   };
+
+  //TODO: WHAT IS THIS FOR????
   handleRequestClose(){
     this.setState({
       isOpen: false,
@@ -165,12 +174,33 @@ class Directory extends React.Component {
     })
   }
 
+  passGuessChange(e) {
+      //   let stateCopy = Object.assign({}, this.state);
+      //   stateCopy[modalType] = true;
+      //   this.setState(stateCopy);
+      //   console.log('this.state.modaltype',modalType, this.state[modalType]);
+      this.setState({
+        passwordGuess: e.target.value
+      })
+  }
   passChange(e){
     this.setState({
       docPass: e.target.value
     })
   }
 
+  checkPassword() {
+      console.log('check password called and selcted doc is ', this.state.selectedDoc);
+      if(this.state.selectedDoc.password === this.state.passwordGuess){
+          var updatedSelectedDoc = Object.assign({}, this.state.selectedDoc, {userPermitted: true})
+          this.setState({selectedDoc: updatedSelectedDoc})
+
+      } else {
+        console.log('this.state.selected doc is ', this.state.selectedDoc);
+          alert(`incorrect the password is ${this.state.selectedDoc.password} and you inputted ${this.state.passwordGuess}`)
+      }
+
+  }
   newDocument(){
     //   this.props.store.get('userId')
     console.log('this.state.user is ', this.state.user);
@@ -195,30 +225,57 @@ class Directory extends React.Component {
         // newPassword: resp.document.password
       })
     })
-    .catch((err)=>console.log(err))
+    .catch((err)=>console.log('error in new document', err))
   }
+
   render() {
 
-    const actions = [
-      <FlatButton
-        key={1}
-        label="Cancel"
-        primary={true}
-        onClick={this.onModalClose.bind(this)}
-      />,
-      <FlatButton
-        key={2}
-        type="submit"
-        label="Submit"
-        primary={true}
-      />,
-    ];
+      const newDocForm = (<form className="commentForm" onSubmit={this.newDocument.bind(this)}>
+          <input
+              type="text"
+              placeholder="Your Document Name"
+              value={this.state.docName}
+              onChange={this.titleChange.bind(this)}
+          />
+          <input
+              type="password"
+              placeholder="Password for Document"
+              value={this.state.docPass}
+              onChange={this.passChange.bind(this)}
+          />
+
+          <div style={{ textAlign: 'right', padding: 8, margin: '24px -24px -24px -24px' }}>
+              {[<FlatButton key={700} label="Cancel" primary={true} onClick={() => this.onModalClose('isDocModalOpen')}/>,
+                  <FlatButton key={800}  type="submit" label="Submit" primary={true}/>,
+              ]}
+          </div>
+      </form>)
+
+      const enterPasswordForm = (<form className="commentForm" onSubmit={() => this.checkPassword()}>
+          <input
+              type="password"
+              placeholder="Password for Document"
+              value={this.state.passwordGuess}
+              onChange={this.passGuessChange.bind(this)}
+          />
+
+          <div style={{ textAlign: 'right', padding: 8, margin: '24px -24px -24px -24px' }}>
+              {[<FlatButton key={900} label="Cancel" primary={true} onClick={() => this.onModalClose('isPassModalOpen')}/>,
+                  <FlatButton key={1000} type="submit" label="Submit" primary={true}/>,
+              ]}
+          </div>
+      </form>)
+
     // console.log(this.state.newDocId);
     if (this.state.newDocId){
       return (
         <Redirect to={"/editor/"+this.state.newDocId} />
       )
-    }else if (!this.state.loggedIn){
+  }else if(this.state.selectedDoc.userPermitted){
+      return (
+        <Redirect to={"/editor/"+this.state.selectedDoc.id} />
+      )
+  }else if (!this.state.loggedIn){
       return (
         <Redirect to={'/'} />
       )
@@ -230,89 +287,76 @@ class Directory extends React.Component {
           <h2 style={{textAlign: 'center'}} >Open document to edit or create a new one!</h2>
           <h3>{`logged in as ${this.state.user.email} with id ${this.state.user._id}`}</h3>
           <div style={{marginLeft: '5px', marginRight: '5px'}}>
-
-          <div style={{display: 'flex', justifyContent: 'space-between'}}>
-            <div>
-              <FloatingActionButton onTouchTap={this.onModalOpen.bind(this)}>
-                <ContentAdd />
-              </FloatingActionButton>
-              <Dialog
-                title="Create a New Document"
-                // actions={actions}
-                modal={false}
-                open={this.state.isDocModalOpen}
-                onRequestClose={this.onModalClose.bind(this)}
-                >
-                  <form className="commentForm" onSubmit={this.newDocument.bind(this)}>
-                      <input
-                        type="text"
-                        placeholder="Your Document Name"
-                        value={this.state.docName}
-                        onChange={this.titleChange.bind(this)}
+              <div style={{display: 'flex', justifyContent: 'space-between'}}>
+                  <div>
+                      <FloatingActionButton onTouchTap={() => this.onModalOpen('isDocModalOpen')}>
+                          <ContentAdd />
+                      </FloatingActionButton>
+                      <Dialog
+                          title="Create a New Document"
+                          // actions={actions}
+                          modal={false}
+                          open={this.state.isDocModalOpen}
+                          onRequestClose={() => this.onModalClose('isDocModalOpen')}
+                      >{newDocForm}</Dialog>
+                  </div>
+                  {this.state.documents[0]._id!==0?<div>
+                      <RaisedButton
+                          onTouchTap={this.handleTouchTap.bind(this)}
+                          label="Filter"
                       />
-                      <input
-                        type="text"
-                        placeholder="Password for Document"
-                        value={this.state.docPass}
-                        onChange={this.passChange.bind(this)}
-                      />
-
-                    <div style={{ textAlign: 'right', padding: 8, margin: '24px -24px -24px -24px' }}>
-                      {actions}
-                    </div>
-                </form>
-
-              </Dialog>
-            </div>
-
-          {this.state.documents[0]._id!==0?<div>
-              <RaisedButton
-                onTouchTap={this.handleTouchTap.bind(this)}
-                label="Filter"
-              />
-              <Popover
-                open={this.state.isOpen}
-                anchorEl={this.state.anchorEl}
-                anchorOrigin={{horizontal: 'left', vertical: 'bottom'}}
-                targetOrigin={{horizontal: 'left', vertical: 'center'}}
-                onRequestClose={this.handleRequestClose.bind(this)}
-                animation={PopoverAnimationVertical}
-                useLayerForClickAway={true}
-                >
-                  <Menu onChange={this.filter.bind(this)}>
-                    <MenuItem value={1} primaryText="All Documents"/>
-                    <MenuItem value={2} primaryText="Owned By Me" />
-                    <MenuItem value={3} primaryText="Date Created" />
-                    <MenuItem value={4} primaryText="Oldest" />
-                  </Menu>
-                </Popover>
-              </div>: null}
-            </div>
-
-            {this.state.documents.map((doc, i)=>
-              <div key={i}>
-                <List>
-                  {doc._id ?
-                  <Link key={i} to={'/editor/'+doc._id}>
-                  <ListItem
-                    key={i}
-                    leftAvatar={<Avatar icon={<ActionAssignment />} backgroundColor={blue500} />}
-                    rightIcon={<ActionInfo />}
-                    primaryText={doc.title}
-                    // onMouseDown={(e)=>this}
-                    secondaryText={new Date(parseInt(doc.dateCreated)).toLocaleString()}
-                  />
-                </Link>:
-                <div key={i} style={{textAlign: 'center'}}>You current do not have any documents...</div>}
-                </List>
-                <Divider />
+                      <Popover
+                          open={this.state.isOpen}
+                          anchorEl={this.state.anchorEl}
+                          anchorOrigin={{horizontal: 'left', vertical: 'bottom'}}
+                          targetOrigin={{horizontal: 'left', vertical: 'center'}}
+                          onRequestClose={this.handleRequestClose.bind(this)}
+                          animation={PopoverAnimationVertical}
+                          useLayerForClickAway={true}
+                      >
+                          <Menu onChange={this.filter.bind(this)}>
+                              <MenuItem value={1} primaryText="All Documents"/>
+                              <MenuItem value={2} primaryText="Owned By Me" />
+                              <MenuItem value={3} primaryText="Date Created" />
+                              <MenuItem value={4} primaryText="Oldest" />
+                          </Menu>
+                      </Popover>
+                      </div>: null}
+                  </div>
               </div>
 
-            )}
-
+              {this.state.documents.map((doc, i)=>
+                  <div key={i}>
+                      <List>
+                        {doc._id ?
+                          <ListItem
+                              key={i}
+                              leftAvatar={<Avatar icon={<ActionAssignment />} backgroundColor={blue500} />}
+                              rightIcon={<ActionInfo />}
+                              primaryText={doc.title}
+                              // onMouseDown={(e)=>this}
+                              onTouchTap={() => {
+                                  var permissions = doc.password !== "" ? false : true;
+                                  var selectedDoc = {password: doc.password, id: doc._id, title: doc.title, author: doc.author, collaborators: doc.collaborators, userPermitted: permissions}
+                                  this.setState({selectedDoc: selectedDoc}, function(){
+                                      this.onModalOpen('isPassModalOpen')
+                                  })}}
+                              secondaryText={new Date(parseInt(doc.dateCreated)).toLocaleString()}
+                          />:
+                          <div key={i} style={{textAlign: 'center'}}>You current do not have any documents...</div>}
+                      </List>
+                      <Divider />
+                  </div>
+              )}
+              <Dialog
+                  title="Enter Document Password:"
+                  // actions={actions}
+                  modal={false}
+                  open={this.state.isPassModalOpen}
+                  onRequestClose={() => this.onModalClose('isPassModalOpen')}
+              >{enterPasswordForm}</Dialog>
+              <RaisedButton label="Logout" secondary={true} onMouseDown={this.logout.bind(this)}/>
           </div>
-          <RaisedButton label="Logout" secondary={true} onMouseDown={this.logout.bind(this)}/>
-        </div>
       )
     }
   };
