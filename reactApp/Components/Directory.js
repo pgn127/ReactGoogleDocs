@@ -137,21 +137,25 @@ class Directory extends React.Component {
       isOpen: false,
     });
   };
+
   formSubmit(e){
     e.preventDefault();
     alert('Submitted form!');
     this.modalClose();
   }
+
   titleChange(e){
     this.setState({
       docName: e.target.value
     })
   }
+
   passChange(e){
     this.setState({
       docPass: e.target.value
     })
   }
+
   newDocument(){
     fetch('http://localhost:3000/documents/new/' + this.props.store.get('userId'), {
         method: 'POST',
@@ -160,7 +164,7 @@ class Directory extends React.Component {
         },
         body: JSON.stringify({
             title: this.state.docName,
-            //password: newPassword,
+            password: this.state.docPass,
             //   collaborators: newCollaborators
 
         })
@@ -169,10 +173,11 @@ class Directory extends React.Component {
         return response.json()
     })
     .then((resp) => {
-      console.log("DOC", resp.document);
-      console.log("DOCID", resp.document._id);
+      console.log("DOC from new document repsonse", resp.document);
+      // console.log("DOCID", resp.document._id);
       this.setState({
-        newDocId: resp.document._id
+        newDocId: resp.document._id,
+        // newPassword: resp.document.password
       })
     })
     .catch((err)=>console.log(err))
@@ -190,7 +195,7 @@ class Directory extends React.Component {
           title: "updatedtitle"
       }
 
-    console.log(this.state);
+    // console.log(this.state);
     const actions = [
       <FlatButton
         label="Cancel"
