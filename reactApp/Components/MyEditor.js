@@ -7,49 +7,51 @@ import BlockStyles from './BlockStyles.js';
 import RaisedButton from 'material-ui/RaisedButton';
 import FlatButton from 'material-ui/FlatButton';
 import IconButton from 'material-ui/IconButton';
+import Dialog from 'material-ui/Dialog';
 import FontIcon from 'material-ui/FontIcon';
 import AppBar from 'material-ui/AppBar';
-import {Editor, EditorState, RichUtils, DefaultDraftBlockRenderMap} from 'draft-js';
+import TextField from 'material-ui/TextField';
+import {Editor, EditorState, RichUtils, ContentState, DefaultDraftBlockRenderMap, convertFromRaw, convertToRaw} from 'draft-js';
 import { Map } from 'immutable';
 
 
 const styleMap = {
-  'BOLD': {
-    fontWeight: 'bold'
-  },
-  'ITALIC': {
-     'fontStyle': 'italic'
-  },
-  'UNDERLINE': {
-     'textDecoration': 'underline'
-  },
-  'FONT-COLOR': {
-    'color': 'black'
-  },
-  'FONT-SIZE': {
-     'fontSize': '12px'
-  },
-  'TEXT-ALIGN-LEFT': {
-      'textAlign': 'left'
-  },
-  'TEXT-ALIGN-CENTER': {
-      'textAlign': 'center'
-  },
-  'TEXT-ALIGN-RIGHT': {
-      'textAlign': 'right'
-  }
+    'BOLD': {
+        fontWeight: 'bold'
+    },
+    'ITALIC': {
+        'fontStyle': 'italic'
+    },
+    'UNDERLINE': {
+        'textDecoration': 'underline'
+    },
+    'FONT-COLOR': {
+        'color': 'black'
+    },
+    'FONT-SIZE': {
+        'fontSize': '12px'
+    },
+    'TEXT-ALIGN-LEFT': {
+        'textAlign': 'left'
+    },
+    'TEXT-ALIGN-CENTER': {
+        'textAlign': 'center'
+    },
+    'TEXT-ALIGN-RIGHT': {
+        'textAlign': 'right'
+    }
 };
 
 const blockRenderMap = Map({
-  'alignRight': {
-    element: 'div'
-  },
-  'alignLeft': {
-    element: 'div'
-  },
-  'alignCenter': {
-    element: 'div'
-  }
+    'alignRight': {
+        element: 'div'
+    },
+    'alignLeft': {
+        element: 'div'
+    },
+    'alignCenter': {
+        element: 'div'
+    }
 });
 
 // Include 'paragraph' as a valid block and updated the unstyled element but
@@ -57,116 +59,220 @@ const blockRenderMap = Map({
 const extendedBlockRenderMap = DefaultDraftBlockRenderMap.merge(blockRenderMap);
 
 class MyEditor extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      editorState: EditorState.createEmpty(), //editorState from draftjs
-      documentName: 'Document Name'
-    };
+    constructor(props) {
+        super(props);
+        this.state = {
+            editorState: EditorState.createEmpty(), //editorState from draftjs
+            title: 'Untitled Document',
+            saved: false,
+            alertOpen: false,
+            currentDocument:  {},
+            currentUser: {
+                _id: '597797018cccf651b76f25ac',
+                name: 'Frankie',
+                password: 'Frankie1!',
+                email: 'fflores@colgate.edu'
+            }
+        };
 
-    this.onChange = (editorState) => this.setState({editorState});
-    this.focus = () => this.refs.editor.focus();
-  }
+        // this.onChange = (editorState) => this.setState({editorState});
+        this.focus = () => this.refs.editor.focus();
+    }
+
+    onChange(editorState) {
+        this.setState({editorState: editorState, saved: false})
+    }
+
+    componentDidMount() {
+        fetch('http://localhost:3000/documents/5977add188553348069400e1')
+        .then((response) => {
+
+            return response.json()
+        })
+        .then((resp) => {
+            console.log("pulled doc", resp.document);
+            const contentState = convertFromRaw( JSON.parse(resp.document.content) );
+            var currentDocument = Object.assign({}, resp.document, {content: contentState})
+            this.setState({saved: false, currentDocument: currentDocument, title: currentDocument.title, editorState: EditorState.createWithContent(contentState) })
+            // this.setState({currentDocument: resp.document})
+        })
+        .catch((err)=>console.log('error pulling doc', err))
+    }
 
 
-  // onChange(editorState) {
-  //     this.setState({editorState})
-  // }
+    //USED FOR BOLD, and styles supported by FontStyles.js
+    _toggleInlineStyle(inlineStyle) {
+        this.onChange( RichUtils.toggleInlineStyle(this.state.editorState,inlineStyle));
+    }
 
-
-//USED FOR BOLD, and styles supported by FontStyles.js
-  _toggleInlineStyle(inlineStyle) {
-      this.onChange( RichUtils.toggleInlineStyle(this.state.editorState,inlineStyle));
-}
-
-//USED FOR: unorderedlist, orderedlist
-_toggleBlockType(blockType) {
-    this.onChange(RichUtils.toggleBlockType(this.state.editorState, blockType));
-}
-
-myBlockStyleFn(contentBlock) {
-  const type = contentBlock.getType();
-  if (type === 'alignRight') {
-    return 'align-right';
-  }
-  else if (type === 'alignLeft') {
-    return 'align-left';
-  }
-  else if (type === 'alignCenter') {
-    return 'align-center';
-  }
-  return "";
-}
-
-onFontSizeClick(fontSize) {
-   var parsed = parseInt(fontSize);
-   styleMap['FONT-SIZE-' + fontSize] = {
-      'fontSize': parsed + 'px'
-   };
-   console.log(styleMap);
-   this.onChange(RichUtils.toggleInlineStyle(
-     this.state.editorState,
-     'FONT-SIZE-' + fontSize
-   ));
- }
-
- onFontColorClick(fontColor) {
-   styleMap['FONT-COLOR-' + fontColor] = {
-      'color': fontColor
-   };
-   console.log(styleMap);
-   this.onChange(RichUtils.toggleInlineStyle(
-     this.state.editorState,
-     'FONT-COLOR-' + fontColor
-   ));
- }
-
-  _onTab(e) {
-      const maxDepth = 8;
-      this.onChange(RichUtils.onTab(e, this.state.editorState, maxDepth));
-  }
+    //USED FOR: unorderedlist, orderedlist
+    _toggleBlockType(blockType) {
+        this.onChange(RichUtils.toggleBlockType(this.state.editorState, blockType));
+    }
 
 
 
-  render() {
-    return (
-      <div >
-          <AppBar title={this.state.documentName}/>
-          <div className="docContainer">
+    myBlockStyleFn(contentBlock) {
+        const type = contentBlock.getType();
+        if (type === 'alignRight') {
+            return 'align-right';
+        }
+        else if (type === 'alignLeft') {
+            return 'align-left';
+        }
+        else if (type === 'alignCenter') {
+            return 'align-center';
+        }
+        return "";
+    }
 
-              {/* <IconButton tooltip="Font Icon">
-                  <FontIcon className="muidocs-icon-action-home" />
-              </IconButton> */}
-              <div className="btn-toolbar editorToolbar">
-                  <div className="btn-group">
-                      <FontStyles
-                          editorState={this.state.editorState}
-                          onToggle={this._toggleInlineStyle.bind(this)}
-                          onFontSizeClick={(fontSize) => this.onFontSizeClick(fontSize)}
-                          onFontColorClick={(fontColor) => this.onFontColorClick(fontColor)}
-                      />
-                  </div>
-                  <div className="btn-group">
-                      <BlockStyles
-                          editorState={this.state.editorState}
-                          onToggle={this._toggleBlockType.bind(this)}
-                      />
-                  </div>
-              </div>
-              <div className="editor">
-                  <Editor
-                      customStyleMap={styleMap}
-                      editorState={this.state.editorState}
-                      onChange={this.onChange}
-                      onTab={this._onTab.bind(this)}
-                      blockRenderMap={extendedBlockRenderMap}
-                      blockStyleFn={this.myBlockStyleFn}
-                  />
-              </div>
-          </div>
-      </div>
-    );
-  }
-}
+    onFontSizeClick(fontSize) {
+        var parsed = parseInt(fontSize);
+        styleMap['FONT-SIZE-' + fontSize] = {
+            'fontSize': parsed + 'px'
+        };
+        console.log(styleMap);
+        this.onChange(RichUtils.toggleInlineStyle(
+            this.state.editorState,
+            'FONT-SIZE-' + fontSize
+        ));
+    }
 
-export default MyEditor;
+    onFontColorClick(fontColor) {
+        styleMap['FONT-COLOR-' + fontColor] = {
+            'color': fontColor
+        };
+        console.log(styleMap);
+        this.onChange(RichUtils.toggleInlineStyle(
+            this.state.editorState,
+            'FONT-COLOR-' + fontColor
+        ));
+    }
+
+    _onTab(e) {
+        const maxDepth = 8;
+        this.onChange(RichUtils.onTab(e, this.state.editorState, maxDepth));
+    }
+
+
+    onSave(){
+        var newContent = JSON.stringify(convertToRaw(this.state.editorState.getCurrentContent()));
+        var newTitle = this.state.title;
+        fetch('http://localhost:3000/documents/save/5977add188553348069400e1', {
+            method: 'POST',
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                content: newContent,
+                title: newTitle,
+                //   password: newPassword,
+                //   collaborators: newCollaborators
+
+            })
+        })
+        .then((response) => {
+            return response.json()
+        })
+        .then((resp) => {
+            console.log("saved document", resp.document);
+            const contentState = JSON.stringify(convertToRaw(this.state.editorState.getCurrentContent()));
+            var rawContent = this.state.editorState.getCurrentContent();
+            var currentDocument = Object.assign({}, resp.document, {content: rawContent})
+            this.setState({saved: true, currentDocument: currentDocument, editorState: EditorState.createWithContent(rawContent) })
+        })
+        .catch((err)=>console.log('error saving doc', err))
+        //   console.log('the current document to save is ', this.state.currentDocument);
+    }
+
+
+    onTitleEdit(event) {
+        //   console.log('event triggered ', event);
+        this.setState({saved: false, title: event.target.value})
+    }
+
+    //called when user clicks ok and decides to not save changes
+    onAlertOk() {
+        this.setState({alertOpen: false});
+        //TODO: go back to documents page
+    }
+
+    //called when user clicks cancel on alert
+    onAlertClose() {
+        this.setState({alertOpen: false});
+    }
+
+    onAlertOpen() {
+        this.setState({alertOpen: true});
+    }
+
+    render() {
+        const actions = [
+            <FlatButton label="Cancel" primary={true} onTouchTap={this.onAlertClose.bind(this)}/>,
+            <FlatButton label="Go back anyway" primary={true} onTouchTap={this.onAlertOk.bind(this)}/>];
+            return (
+                <div >
+                    <AppBar
+                        title={
+                            <TextField id="text-field-controlled" inputStyle={this.state.title === 'Untitled Document' ? {color: 'white', fontStyle: 'italic'}: {color: 'white'}} underlineShow={false} value={this.state.title} onChange={this.onTitleEdit.bind(this)} />}
+                        onLeftIconButtonTouchTap={this.onAlertOpen.bind(this)}
+                    />
+
+                    <Dialog
+                        title="Changes not saved!"
+                        actions={actions}
+                        modal={true}
+                        open={this.state.alertOpen}
+                    >You have unsaved changes! Click save to prevent your changes from being lost!</Dialog>
+
+
+                    <div className="docContainer">
+                        <div className='documentControls'>
+                            <div>controls will go here (file, edit, etc)</div>
+                            <RaisedButton
+                                label={this.state.saved ? "Saved" : "Save"}
+                                // labelStyle={{padding: 1}}
+                                // buttonStyle={{margin: 1}}
+                                // backgroundColor={'green'}
+                                style={{margin: 5}}
+                                primary={true}
+                                disabled={this.state.saved}
+                                onTouchTap={this.onSave.bind(this)}/>
+
+                        </div>
+
+
+                        <div className="btn-toolbar editorToolbar">
+                            <div className="btn-group">
+                                <FontStyles
+                                    editorState={this.state.editorState}
+                                    onToggle={this._toggleInlineStyle.bind(this)}
+                                    onFontSizeClick={(fontSize) => this.onFontSizeClick(fontSize)}
+                                    onFontColorClick={(fontColor) => this.onFontColorClick(fontColor)}
+                                />
+                            </div>
+                            <div className="btn-group">
+                                <BlockStyles
+                                    editorState={this.state.editorState}
+                                    onToggle={this._toggleBlockType.bind(this)}
+                                />
+                            </div>
+                        </div>
+                        <div className="editor">
+                            <Editor
+                                customStyleMap={styleMap}
+                                editorState={this.state.editorState}
+                                //   onChange={this.onChange}
+                                onChange={this.onChange.bind(this)}
+                                onTab={this._onTab.bind(this)}
+                                blockRenderMap={extendedBlockRenderMap}
+                                blockStyleFn={this.myBlockStyleFn}
+                            />
+                        </div>
+                    </div>
+                </div>
+                );
+            }
+        }
+
+        export default MyEditor;
