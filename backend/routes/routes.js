@@ -27,8 +27,6 @@ router.get('/isLoggedIn', function (req, res) {
 //   }
 // });
 
-
-
 //get all documents where user is an owner OR collaborator
 router.get('/documents/all/:userId', function(req,res) {
 
