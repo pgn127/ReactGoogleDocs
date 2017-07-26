@@ -118,7 +118,6 @@ class Directory extends React.Component {
 
 
   render() {
-<<<<<<< HEAD
       const testDoc = {
           content: "",
           _id: "5977add188553348069400e1",
@@ -130,21 +129,7 @@ class Directory extends React.Component {
           ],
           title: "updatedtitle"
       }
-    return (
-      <div>
-          <h1>Welcome to the Directory</h1>
-          <h2>Click a document or create a new one!</h2>
-          <div>
-              Click to see document
-          </div>
-          <button onMouseDown={this.fakeDocClick.bind(this)}>Click fake doc</button>
-          <button onMouseDown={this.logout.bind(this)}>Logout</button>
-        <button onMouseDown={this.logged.bind(this)}>Check if logged in</button>
-      </div>
-    )
-  }
-};
-=======
+
     console.log(this.state);
 
     return (
@@ -196,6 +181,6 @@ class Directory extends React.Component {
       )
     }
   };
->>>>>>> fb81157a0a3164c43c769050b675fd7b1bc1b0e3
+
 
   export default Directory;

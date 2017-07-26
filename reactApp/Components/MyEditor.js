@@ -1,12 +1,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import 'draft-js/dist/Draft.css';
-// import ButtonToolbar from './ButtonToolbar.js';
+import randomColor from 'randomcolor'; // import the script
 import FontStyles from './FontStyles.js';
 import BlockStyles from './BlockStyles.js';
 import RaisedButton from 'material-ui/RaisedButton';
 import FlatButton from 'material-ui/FlatButton';
 import IconButton from 'material-ui/IconButton';
+import {List, ListItem} from 'material-ui/List';
 import Dialog from 'material-ui/Dialog';
 import FontIcon from 'material-ui/FontIcon';
 import AppBar from 'material-ui/AppBar';
@@ -66,6 +67,7 @@ class MyEditor extends React.Component {
             title: 'Untitled Document',
             saved: false,
             alertOpen: false,
+            collaborators: [],
             currentDocument:  {},
             currentUser: {
                 _id: '597797018cccf651b76f25ac',
@@ -93,7 +95,8 @@ class MyEditor extends React.Component {
             console.log("pulled doc", resp.document);
             const contentState = convertFromRaw( JSON.parse(resp.document.content) );
             var currentDocument = Object.assign({}, resp.document, {content: contentState})
-            this.setState({saved: false, currentDocument: currentDocument, title: currentDocument.title, editorState: EditorState.createWithContent(contentState) })
+            this.setState({saved: false, currentDocument: currentDocument, collaborators: currentDocument.collaborators, title: currentDocument.title, editorState: EditorState.createWithContent(contentState) })
+            console.log('document collaborators ', currentDocument.collaborators);
             // this.setState({currentDocument: resp.document})
         })
         .catch((err)=>console.log('error pulling doc', err))
@@ -179,6 +182,7 @@ class MyEditor extends React.Component {
             const contentState = JSON.stringify(convertToRaw(this.state.editorState.getCurrentContent()));
             var rawContent = this.state.editorState.getCurrentContent();
             var currentDocument = Object.assign({}, resp.document, {content: rawContent})
+
             this.setState({saved: true, currentDocument: currentDocument, editorState: EditorState.createWithContent(rawContent) })
         })
         .catch((err)=>console.log('error saving doc', err))
@@ -187,7 +191,6 @@ class MyEditor extends React.Component {
 
 
     onTitleEdit(event) {
-        //   console.log('event triggered ', event);
         this.setState({saved: false, title: event.target.value})
     }
 
@@ -228,16 +231,24 @@ class MyEditor extends React.Component {
 
                     <div className="docContainer">
                         <div className='documentControls'>
-                            <div>controls will go here (file, edit, etc)</div>
-                            <RaisedButton
-                                label={this.state.saved ? "Saved" : "Save"}
-                                // labelStyle={{padding: 1}}
-                                // buttonStyle={{margin: 1}}
-                                // backgroundColor={'green'}
-                                style={{margin: 5}}
-                                primary={true}
-                                disabled={this.state.saved}
-                                onTouchTap={this.onSave.bind(this)}/>
+                            <div>File Edit View Help</div>
+
+                            <div className="rightSideControls">
+                                Shared with:
+                                <List>
+                                    {this.state.collaborators.map((user) => (
+                                        <span className="collaboratorIcon" style={{backgroundColor: randomColor()}}>{user.name.slice(0,1)}</span>
+
+                                    ))}
+
+                                </List>
+                                <RaisedButton
+                                    label={this.state.saved ? "Saved" : "Save"}
+                                    style={{margin: 5}}
+                                    primary={true}
+                                    disabled={this.state.saved}
+                                    onTouchTap={this.onSave.bind(this)}/>
+                            </div>
 
                         </div>
 
