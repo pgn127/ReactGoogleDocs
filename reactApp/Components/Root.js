@@ -35,7 +35,7 @@ class Root extends React.Component {
   }
 
   render() {
-    console.log(this.state);
+    // console.log(this.state);
     return (
       <Router history={this.props.history}  store={this.props.store}>
 
