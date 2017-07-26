@@ -31,22 +31,26 @@ router.get('/isLoggedIn', function (req, res) {
 router.get('/documents/all/:userId', function(req,res) {
 
     var userId = req.params.userId;
+    if(!userId){
+        //if the user id is empty
+        console.log('the user id was undefined in get all documents');
+    }
     User.findById(userId, function(err, user){
         if(err){
-            console.log('error finding user for all docuemnts');
-            res.status(500).json({err: err})
+            console.log('error finding user for all docuemnts', err);
+            res.status(500).json({success: false})
         } else if(user) {
             user.getAllDocuments(function(err, documents){
                 if(err){
                     console.log('error getting docuemnts', err);
-                    res.status(500).json({err: err, message: 'Unable to get user information'})
+                    res.status(500).json({success: false, message: 'Unable to get user information'})
                 } else{
                     if(documents) {
                         console.log('documents found ', documents);
-                        res.status(200).json({documents: documents});
+                        res.status(200).json({success: true, documents: documents});
                     } else {
                         console.log('user foudn but had no docuemtns');
-                        res.status(200).json({documents: []})
+                        res.status(200).json({success: true, documents: []})
                     }
                 }
             })

@@ -285,11 +285,9 @@ class MyEditor extends React.Component {
 
     onAlertOpen() {
         this.setState({alertOpen: !this.state.saved});
-        console.log('on alert open called bc this.state.saved is ', this.state.saved, 'and this.state.alertOpen ', this.state.alertOpen);
     }
 
     render() {
-      console.log(this.state.saved);
         const actions = [
             <FlatButton label="Cancel" primary={true} onTouchTap={this.onAlertClose.bind(this)}/>,
               <FlatButton label="Go back anyway" primary={true} onTouchTap={this.onAlertOk.bind(this)}/>]

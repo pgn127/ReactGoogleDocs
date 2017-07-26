@@ -36,10 +36,14 @@ class Directory extends React.Component {
     }
   }
 
-  componentDidMount(){
+  componentWillMount(){
     console.log('user id in component did mount', this.props.store.get('userId'), this.props.store.get('userId'));
     this.setState({user: this.props.store.get('user')})
-    this.ownedByAll()
+
+  }
+
+  componentDidMount() {
+      this.ownedByAll()
   }
 
   logout(){
@@ -111,7 +115,7 @@ class Directory extends React.Component {
       console.log("pulled resp", resp);
       this.setState({documents: resp.documents})
     })
-    .catch((err)=>console.log(err))
+    .catch((err)=>console.log('error in finding all owned docuemnts', err))
   }
 
 
