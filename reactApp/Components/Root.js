@@ -6,6 +6,7 @@ import Directory from './Directory';
 import MyEditor from './MyEditor'
 import Register from './Register.js'
 
+
 class Root extends React.Component {
   constructor(props){
     super(props);
@@ -36,15 +37,17 @@ class Root extends React.Component {
   render() {
     console.log(this.state);
     return (
-      <Router history={this.props.history}  >
+      <Router history={this.props.history}  store={this.props.store}>
 
 
           <Switch>
-              <Route exact path="/" component={Login}/>
+              {/* <Route exact path="/" component={Login}/> */}
+              <Route exact path="/" render={(props) => <Login store={this.props.store}/>}/>
               <Route exact path="/register" component={Register}/>
-              <Route exact path="/directory" component={Directory} />
+              <Route exact path="/directory/" render={(props) => <Directory store={this.props.store}/>} />
+              <Route path="/editor/:docId" render={(props) => <MyEditor {...props} store={this.props.store}/>} />
               <Route path ="/" component={Login}/>
-        </Switch>
+          </Switch>
       </Router>
     );
   }

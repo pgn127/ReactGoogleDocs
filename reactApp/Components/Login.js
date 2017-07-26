@@ -33,6 +33,14 @@ export default class Login extends React.Component {
     };
 
   }
+
+  componentDidMount(){
+    if (this.props.store.get('userId')){
+      this.setState({
+        loggedin:true,
+      })
+    }
+  }
   handleSubmit(){
     // console.log("in submit login ");
 
@@ -86,13 +94,9 @@ export default class Login extends React.Component {
         return response.json()
     })
     .then((resp) => {
-    //   console.log(resp.user);
-      if(resp.success) {
-          this.setState({email: '', password: '', loggedin: true, user: resp.user});
-
-      } else {
-          console.log('not successful login');
-      }
+      console.log(resp.user);
+      this.props.store.set('userId', resp.user._id);
+      this.setState({email: '', password: '', loggedin: true, user: resp.user});
     })
     .catch( (err) => {
         console.log('caught error in handle submit of login ', err);
