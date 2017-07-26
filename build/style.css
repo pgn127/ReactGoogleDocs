@@ -12,6 +12,26 @@ html, body {
     height: 30px;
     width: 30px;
 }
+.collaboratorIcon {
+    width: 20px;
+    height: 20px;
+    color: white;
+    padding: 8px;
+}
+.rightSideControls {
+    display: flex;
+    flex-wrap:  nowrap;
+}
+
+.documentControls {
+    display: flex;
+    flex-wrap:  nowrap;
+    align-items: center;
+    padding: 5px;
+    width: 100%;
+    justify-content: space-between;
+    height: 40px;
+}
 .editorToolbar {
     border: 1px solid #D9D9D9;
     width: 100%;

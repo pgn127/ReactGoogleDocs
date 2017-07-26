@@ -57,6 +57,42 @@ router.get('/documents/all/:userId', function(req,res) {
     })
 })
 
+//get document by id
+router.get('/documents/:docId', function(req,res) {
+    var docId = req.params.docId;
+    Document.findById(docId)
+    .populate('collaborators')
+    .populate('author')
+    .exec()
+    .then((doc) => {
+        if(doc){
+            res.status(200).json({success: true, document: doc})
+        } else {
+            console.log('document  not found');
+            res.status(400).json({err: err})
+        }
+    })
+    .catch((err) => {
+        console.log('document  not found');
+        res.status(400).json({err: err})
+    })
+    // Document.findById(docId, function(err, doc){
+    //     if(err){
+    //         console.log('error finding  document by id');
+    //         res.status(500).json({err: err})
+    //     } else{
+    //         if(doc){
+    //             res.status(200).json({success: true, document: doc})
+    //         } else {
+    //             console.log('document  not found');
+    //             res.status(400).json({err: err})
+    //         }
+    //     }
+    //
+    // })
+})
+
+
 //get all documents where user is an owner
 router.get('/documents/owned/:userId', function(req,res) {
     var userId = req.params.userId;
