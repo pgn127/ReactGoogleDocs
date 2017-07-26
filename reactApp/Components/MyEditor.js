@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { Link } from 'react-router-dom';
+import { Link, Redirect } from 'react-router-dom';
 import 'draft-js/dist/Draft.css';
 import randomColor from 'randomcolor'; // import the script
 import FontStyles from './FontStyles.js';
@@ -70,6 +70,7 @@ class MyEditor extends React.Component {
             alertOpen: false,
             collaborators: [],
             currentDocument:  {},
+            goBack: false,
             currentUser: {
                 _id: '597797018cccf651b76f25ac',
                 name: 'Frankie',
@@ -103,7 +104,7 @@ class MyEditor extends React.Component {
               }
             }
         };
-
+        //doc id is this.props.match.params.docId
         // this.onChange = (editorState) => this.setState({editorState});
         this.focus = () => this.refs.editor.focus();
     }
@@ -113,9 +114,10 @@ class MyEditor extends React.Component {
     }
 
     componentDidMount() {
-      console.log(this.props);
-      console.log(this.props.match);
-      console.log(this.props.match.params.docId);
+
+      // console.log(this.props);
+      // console.log(this.props.match);
+      // console.log(this.props.match.params.docId);
         fetch('http://localhost:3000/documents/'+this.props.match.params.docId)
         .then((response) => {
 
@@ -123,10 +125,18 @@ class MyEditor extends React.Component {
         })
         .then((resp) => {
             console.log("pulled doc", resp.document);
-            const contentState = convertFromRaw( JSON.parse(resp.document.content) ) ;
-            var currentDocument = Object.assign({}, resp.document, {content: contentState})
-            this.setState({saved: false, currentDocument: currentDocument, collaborators: currentDocument.collaborators, title: currentDocument.title, editorState: EditorState.createWithContent(contentState) })
-            console.log('document collaborators ', currentDocument.collaborators);
+            //if this document has no content dont overwrite empty editorState in the state
+            if(resp.document.content === ""){
+              console.log('document content was empty ');
+              this.setState({saved: false, currentDocument: resp.document, collaborators: resp.document.collaborators, title: resp.document.title})
+            } else {
+              console.log('document has an existing state');
+              const contentState = convertFromRaw( JSON.parse(resp.document.content) ) ;
+              var currentDocument = Object.assign({}, resp.document, {content: contentState})
+              this.setState({saved: false, currentDocument: currentDocument, collaborators: currentDocument.collaborators, title: currentDocument.title, editorState: EditorState.createWithContent(contentState) })
+
+            }
+            // console.log('document collaborators ', currentDocument.collaborators);
             // this.setState({currentDocument: resp.document})
         })
         .catch((err)=>console.log('error pulling doc', err))
@@ -226,8 +236,9 @@ class MyEditor extends React.Component {
 
     onSave(){
         var newContent = JSON.stringify(convertToRaw(this.state.editorState.getCurrentContent()));
+        // console.log('content that is being saved is ', newContent);
         var newTitle = this.state.title;
-        fetch('http://localhost:3000/documents/save/5977add188553348069400e1', {
+        fetch('http://localhost:3000/documents/save/'+this.props.match.params.docId, {
             method: 'POST',
             headers: {
                 "Content-Type": "application/json"
@@ -241,6 +252,7 @@ class MyEditor extends React.Component {
             })
         })
         .then((response) => {
+          console.log('response in on save ', response);
             return response.json()
         })
         .then((resp) => {
@@ -249,7 +261,7 @@ class MyEditor extends React.Component {
             var rawContent = this.state.editorState.getCurrentContent();
             var currentDocument = Object.assign({}, resp.document, {content: rawContent})
 
-            this.setState({saved: true, currentDocument: currentDocument, editorState: EditorState.createWithContent(rawContent) })
+            this.setState({saved: true, currentDocument: currentDocument, title: newTitle, editorState: EditorState.createWithContent(rawContent) })
         })
         .catch((err)=>console.log('error saving doc', err))
         //   console.log('the current document to save is ', this.state.currentDocument);
@@ -262,7 +274,7 @@ class MyEditor extends React.Component {
 
     //called when user clicks ok and decides to not save changes
     onAlertOk() {
-        this.setState({alertOpen: false});
+        this.setState({alertOpen: false, goBack: true});
         //TODO: go back to documents page
     }
 
@@ -272,21 +284,26 @@ class MyEditor extends React.Component {
     }
 
     onAlertOpen() {
-        this.setState({alertOpen: true});
+        this.setState({alertOpen: !this.state.saved});
+        console.log('on alert open called bc this.state.saved is ', this.state.saved, 'and this.state.alertOpen ', this.state.alertOpen);
     }
 
     render() {
+      console.log(this.state.saved);
         const actions = [
             <FlatButton label="Cancel" primary={true} onTouchTap={this.onAlertClose.bind(this)}/>,
-            <Link to='/directory'>
-              <FlatButton label="Go back anyway" primary={true} onTouchTap={this.onAlertOk.bind(this)}/>
-            </Link>]
+              <FlatButton label="Go back anyway" primary={true} onTouchTap={this.onAlertOk.bind(this)}/>]
+            if (this.state.goBack){
+              return(
+                <Redirect to='/directory' />
+              )
+            }
             return (
                 <div >
                     <AppBar
                         title={
                             <TextField id="text-field-controlled" inputStyle={this.state.title === 'Untitled Document' ? {color: 'white', fontStyle: 'italic'}: {color: 'white'}} underlineShow={false} value={this.state.title} onChange={this.onTitleEdit.bind(this)} />}
-                        onLeftIconButtonTouchTap={this.onAlertOpen.bind(this)}
+                        onLeftIconButtonTouchTap={this.state.saved ? this.onAlertOk.bind(this): this.onAlertOpen.bind(this)}
                     />
 
                     <Dialog

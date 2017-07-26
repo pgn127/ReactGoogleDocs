@@ -10,7 +10,6 @@ import Directory from './Directory'
 // import 'draft-js/dist/Draft.css';
 // import 'bulma/css/bulma.css'
 // import '../../build/style.css'
-import axios from 'axios'
 import AppBar from 'material-ui/AppBar';
 import Divider from 'material-ui/Divider';
 import Paper from 'material-ui/Paper';

@@ -147,21 +147,25 @@ class Directory extends React.Component {
       isOpen: false,
     });
   };
+
   formSubmit(e){
     e.preventDefault();
     alert('Submitted form!');
     this.modalClose();
   }
+
   titleChange(e){
     this.setState({
       docName: e.target.value
     })
   }
+
   passChange(e){
     this.setState({
       docPass: e.target.value
     })
   }
+
   newDocument(){
     //   this.props.store.get('userId')
     console.log('this.state.user is ', this.state.user);
@@ -172,7 +176,7 @@ class Directory extends React.Component {
         },
         body: JSON.stringify({
             title: this.state.docName,
-            //password: newPassword,
+            password: this.state.docPass,
             //   collaborators: newCollaborators
 
         })
@@ -182,7 +186,8 @@ class Directory extends React.Component {
     })
     .then((resp) => {
       this.setState({
-        newDocId: resp.document._id
+        newDocId: resp.document._id,
+        // newPassword: resp.document.password
       })
     })
     .catch((err)=>console.log(err))
