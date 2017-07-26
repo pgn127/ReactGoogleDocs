@@ -35,7 +35,10 @@ export default class Login extends React.Component {
   }
 
   componentDidMount(){
-    if (this.props.store.get('userId')){
+    //   if (this.props.store.get('userId')){
+    var storedUser = this.props.store.get('user')
+    //TODO: make sure that this stored user is actually valid in mongodb
+    if (storedUser && storedUser._id){
       this.setState({
         loggedin:true,
       })
@@ -94,8 +97,10 @@ export default class Login extends React.Component {
         return response.json()
     })
     .then((resp) => {
-      console.log(resp.user);
+        //TODO: check if the user is in the response!!! handle errors
+      console.log('resp.user in login response', resp.user);
       this.props.store.set('userId', resp.user._id);
+      this.props.store.set('user', resp.user);
       this.setState({email: '', password: '', loggedin: true, user: resp.user});
     })
     .catch( (err) => {

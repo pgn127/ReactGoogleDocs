@@ -26,6 +26,7 @@ class Directory extends React.Component {
         password: 'Frankie1!',
         email: 'fflores@colgate.edu',
       },
+      user: {},
       documents: [],
       value: 1,
       isOpen: false,
@@ -34,6 +35,13 @@ class Directory extends React.Component {
       newDocId: '',
     }
   }
+
+  componentDidMount(){
+    console.log('user id in component did mount', this.props.store.get('userId'), this.props.store.get('userId'));
+    this.setState({user: this.props.store.get('user')})
+    this.ownedByAll()
+  }
+
   logout(){
     fetch('http://localhost:3000/logout')
     .then((response) => {
@@ -57,10 +65,7 @@ class Directory extends React.Component {
     })
     .catch((err)=>console.log(err))
   }
-  componentDidMount(){
-    console.log(this.props.store.get('userId'));
-    this.ownedByAll()
-  }
+
   filter(event, value){
     switch(value) {
       case 1:
@@ -94,8 +99,11 @@ class Directory extends React.Component {
     });
     this.setState({documents: documents});
   }
+
+
   ownedByAll(){
-    fetch('http://localhost:3000/documents/all/'+ this.state.fakeUser._id)
+    //   console.log('');
+    fetch('http://localhost:3000/documents/all/'+ this.state.user._id)
     .then((response) => {
       return response.json()
     })
@@ -105,8 +113,10 @@ class Directory extends React.Component {
     })
     .catch((err)=>console.log(err))
   }
+
+
   ownedByMe(){
-    fetch('http://localhost:3000/documents/owned/'+ this.state.fakeUser._id)
+    fetch('http://localhost:3000/documents/owned/'+ this.state.user._id)
     .then((response) => {
       return response.json()
     })
@@ -153,7 +163,9 @@ class Directory extends React.Component {
     })
   }
   newDocument(){
-    fetch('http://localhost:3000/documents/new/' + this.props.store.get('userId'), {
+    //   this.props.store.get('userId')
+    console.log('this.state.user is ', this.state.user);
+    fetch('http://localhost:3000/documents/new/' + this.state.user._id, {
         method: 'POST',
         headers: {
             "Content-Type": "application/json"
@@ -169,8 +181,6 @@ class Directory extends React.Component {
         return response.json()
     })
     .then((resp) => {
-      console.log("DOC", resp.document);
-      console.log("DOCID", resp.document._id);
       this.setState({
         newDocId: resp.document._id
       })
@@ -178,19 +188,7 @@ class Directory extends React.Component {
     .catch((err)=>console.log(err))
   }
   render() {
-      const testDoc = {
-          content: "",
-          _id: "5977add188553348069400e1",
-          author: "597797018cccf651b76f25ac",
-          shareLink: "sharelink.com",
-          dateCreated: "1501015505230",
-          collaborators: [
-            "597797018cccf651b76f25ac"
-          ],
-          title: "updatedtitle"
-      }
 
-    console.log(this.state);
     const actions = [
       <FlatButton
         label="Cancel"
@@ -203,7 +201,7 @@ class Directory extends React.Component {
         primary={true}
       />,
     ];
-    console.log(this.state.newDocId);
+    // console.log(this.state.newDocId);
     if (this.state.newDocId){
       return (
 
@@ -212,10 +210,11 @@ class Directory extends React.Component {
     }
     return (
       <div>
-        <h1 style={{textAlign: 'center', fontSize: '40px', paddingTop: '20px'}} >Document Directory</h1>
-        <h2 style={{textAlign: 'center'}} >Open document to edit or create a new one!</h2>
 
-        <div>
+          <h1 style={{textAlign: 'center', fontSize: '40px', paddingTop: '20px'}} >Document Directory</h1>
+          <h2 style={{textAlign: 'center'}} >Open document to edit or create a new one!</h2>
+          <h3>{`logged in as ${this.state.user.email} with id ${this.state.user._id}`}</h3>
+          <div>
 
           <div style={{display: 'flex', justifyContent: 'space-between'}}>
             <div>

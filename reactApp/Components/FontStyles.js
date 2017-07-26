@@ -39,15 +39,15 @@ class FontStyles extends React.Component {
   colorPicker() {
     return (
       <div style={{display: 'inline-block'}}>
-        <button className="icon-font styleButton"
-        onClick={this.openColorPicker.bind(this)}
-        />
-        <Popover
-          open={this.state.colorPickerOpen}
-          anchorEl={this.state.colorPickerButton}
-          anchorOrigin={{horizontal: 'left', vertical: 'bottom'}}
-          targetOrigin={{horizontal: 'left', vertical: 'top'}}
-          onRequestClose={this.closeColorPicker.bind(this)}
+          <button className="icon-font styleButton"
+              onClick={this.openColorPicker.bind(this)}
+          />
+          <Popover
+              open={this.state.colorPickerOpen}
+              anchorEl={this.state.colorPickerButton}
+              anchorOrigin={{horizontal: 'left', vertical: 'bottom'}}
+              targetOrigin={{horizontal: 'left', vertical: 'top'}}
+              onRequestClose={this.closeColorPicker.bind(this)}
         >
         <CirclePicker onChangeComplete={this.props.onFontColorClick.bind(this)} />
         </Popover>
