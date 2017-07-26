@@ -172,6 +172,10 @@ class MyEditor extends React.Component {
         console.log(this.state.styleMap);
         this.onChange(RichUtils.toggleInlineStyle(
           this.state.editorState,
+           'FONT-SIZE-' + (fontSize - 2).toString()
+        ));
+        this.onChange(RichUtils.toggleInlineStyle(
+          this.state.editorState,
            'FONT-SIZE-' + fontSize.toString()
         ));
       });
@@ -192,7 +196,11 @@ class MyEditor extends React.Component {
         console.log(this.state.styleMap);
         this.onChange(RichUtils.toggleInlineStyle(
           this.state.editorState,
-          'FONT-SIZE-' + fontSize.toString()
+           'FONT-SIZE-' + (fontSize + 2).toString()
+        ));
+        this.onChange(RichUtils.toggleInlineStyle(
+          this.state.editorState,
+           'FONT-SIZE-' + fontSize.toString()
         ));
       });
     }
@@ -330,7 +338,7 @@ class MyEditor extends React.Component {
                         </div>
                         <div className="editor">
                             <Editor
-                                customStyleMap={styleMap}
+                                customStyleMap={this.state.styleMap}
                                 editorState={this.state.editorState}
                                 onChange={this.onChange.bind(this)}
                                 onTab={this._onTab.bind(this)}
