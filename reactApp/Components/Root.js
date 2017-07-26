@@ -42,7 +42,8 @@ class Root extends React.Component {
         <Switch>
           <Route exact path="/" component={Login}/>
           <Route exact path="/register" component={Register}/>
-          <Route exact path="/directory" component={Directory} />
+          <Route exact path="/directory/" component={Directory} />
+          <Route path="/editor/:docId" component={MyEditor} />
           <Route path ="/" component={Login}/>
         </Switch>
       </Router>

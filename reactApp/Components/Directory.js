@@ -40,7 +40,7 @@ class Directory extends React.Component {
     })
     .then((resp) => {
       if (resp.success){
-        console.log("Success logging out");
+
       }
     })
     .catch((err)=>console.log(err))
@@ -150,6 +150,9 @@ class Directory extends React.Component {
       docPass: e.target.value
     })
   }
+  newDocument(){
+    
+  }
   render() {
       const testDoc = {
           content: "",
@@ -245,13 +248,16 @@ class Directory extends React.Component {
             {this.state.documents.map((doc, i)=>
               <div>
                 <List>
+                  <Link to={'/editor/'+doc._id }>
                   <ListItem
                     key={i}
                     leftAvatar={<Avatar icon={<ActionAssignment />} backgroundColor={blue500} />}
                     rightIcon={<ActionInfo />}
                     primaryText={doc.title}
+                    // onMouseDown={(e)=>this}
                     secondaryText={new Date(parseInt(doc.dateCreated)).toLocaleString()}
                   />
+                  </Link>
                 </List>
                 <Divider />
               </div>
@@ -259,13 +265,8 @@ class Directory extends React.Component {
             )}
 
           </div>
-          <div style={{textAlign: 'center'}}>
-            <br />
-            {/* <button onMouseDown={this.logout.bind(this)}>Logout</button> */}
-            <RaisedButton onMouseDown={this.logout.bind(this)}> <Link to="/">LOGOUT</Link></RaisedButton>
-            {/* <button onMouseDown={this.logged.bind(this)}>Test to Check if logged in</button> */}
-            <br />
-          </div>
+          <button onMouseDown={this.logout.bind(this)}>Logout</button>
+          <button onMouseDown={this.logged.bind(this)}>Test to Check if logged in</button>
         </div>
       )
     }

@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { Link } from 'react-router-dom';
 import 'draft-js/dist/Draft.css';
 import randomColor from 'randomcolor'; // import the script
 import FontStyles from './FontStyles.js';
@@ -112,7 +113,8 @@ class MyEditor extends React.Component {
     }
 
     componentDidMount() {
-        fetch('http://localhost:3000/documents/5977add188553348069400e1')
+      console.log(this.props.match.params.docId);
+        fetch('http://localhost:3000/documents/'+this.props.match.params.docId)
         .then((response) => {
 
             return response.json()
@@ -266,7 +268,9 @@ class MyEditor extends React.Component {
     render() {
         const actions = [
             <FlatButton label="Cancel" primary={true} onTouchTap={this.onAlertClose.bind(this)}/>,
-            <FlatButton label="Go back anyway" primary={true} onTouchTap={this.onAlertOk.bind(this)}/>];
+            <Link to='/directory'>
+              <FlatButton label="Go back anyway" primary={true} onTouchTap={this.onAlertOk.bind(this)}/>
+            </Link>]
             return (
                 <div >
                     <AppBar
