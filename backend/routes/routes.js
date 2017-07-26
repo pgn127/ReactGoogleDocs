@@ -12,7 +12,7 @@ router.use(bodyParser.json());
 
 
 router.get('/isLoggedIn', function (req, res) {
-  if (!req.user) {
+  if (!req.session.user) {
     res.send({loggedIn: false});
   } else {
     res.send({loggedIn: true});

@@ -56,9 +56,8 @@ module.exports = function(passport) {
   // POST Login page
   router.post('/login', passport.authenticate('local'), function(req, res) {
     console.log('in login');
-    console.log(req);
-    console.log(res.session);
-    console.log(req.session);
+    // console.log(res.session);
+    // console.log(req.session);
     res.status(200).json({success:true, user:req.user});
   });
   // router.post('/login',

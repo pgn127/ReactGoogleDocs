@@ -11,40 +11,31 @@ const auth = require('./routes/auth');
 const mongoose = require('mongoose');
 const app = express()
 const models = require('./models/models.js')
-
-
-
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(expressValidator());
 app.use(cookieParser('secretCat'));
 app.use(express.static('build'));
-
-
 app.use(session({
-    secret: process.env.SECRET,
-    name: 'Catscoookie',
+    secret: 'Catscoookie',
+    //name: 'Catscoookie',
     store: new MongoStore({ mongooseConnection: mongoose.connection }),
-    proxy: true,
-    resave: true,
-    saveUninitialized: true
+    // proxy: true,
+    // resave: true,
+    // saveUninitialized: true
 }));
-
 app.use(passport.initialize());
 app.use(passport.session());
-
 passport.serializeUser(function(user, done) {
   console.log("SERIALIZAE");
   done(null, user._id);
 });
-
 passport.deserializeUser(function(id, done) {
   console.log("DESERIAL");
   models.User.findById(id, function(err, user) {
     done(err, user);
   });
 });
-
 // passport strategy
 passport.use(new LocalStrategy({usernameField:"name", passwordField:"password"}, function(name, password, done) {
     console.log("LOCAL");
@@ -68,16 +59,13 @@ passport.use(new LocalStrategy({usernameField:"name", passwordField:"password"},
     });
   }
 ));
-
 app.use('/', auth(passport));
 app.use('/', routes);
 // This line makes the build folder publicly available.
-
 app.use('/', (req, res) => {
   console.log("IN USE");
   res.sendFile(path.join(publicPath, 'index.html'));
 });
-
 if (! process.env.MONGODB_URI) {//check if source env.sh has been run
   throw new Error("MONGODB_URI is not in the environmental variables. Try running 'source env.sh'");
 }
@@ -89,9 +77,6 @@ mongoose.connection.on('error', function() {//error connecting
   process.exit(1);
 });
 mongoose.connect(process.env.MONGODB_URI);
-
-
-
 app.listen(3000, function () {
   console.log('Backend server for Electron App running on port 3000!')
 })
