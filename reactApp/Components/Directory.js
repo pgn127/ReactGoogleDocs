@@ -40,7 +40,7 @@ class Directory extends React.Component {
     })
     .then((resp) => {
       if (resp.success){
-
+        console.log("Success logging out");
       }
     })
     .catch((err)=>console.log(err))
@@ -262,8 +262,13 @@ class Directory extends React.Component {
             )}
 
           </div>
-          <button onMouseDown={this.logout.bind(this)}>Logout</button>
-          <button onMouseDown={this.logged.bind(this)}>Test to Check if logged in</button>
+          <div style={{textAlign: 'center'}}>
+            <br />
+            {/* <button onMouseDown={this.logout.bind(this)}>Logout</button> */}
+            <RaisedButton onMouseDown={this.logout.bind(this)}> <Link to="/">LOGOUT</Link></RaisedButton>
+            {/* <button onMouseDown={this.logged.bind(this)}>Test to Check if logged in</button> */}
+            <br />
+          </div>
         </div>
       )
     }

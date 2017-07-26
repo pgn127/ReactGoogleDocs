@@ -18,30 +18,30 @@ import { Map } from 'immutable';
 
 
 const styleMap = {
-    'BOLD': {
-        fontWeight: 'bold'
-    },
-    'ITALIC': {
-        'fontStyle': 'italic'
-    },
-    'UNDERLINE': {
-        'textDecoration': 'underline'
-    },
-    'FONT-COLOR': {
-        'color': 'black'
-    },
-    'FONT-SIZE': {
-        'fontSize': '12px'
-    },
-    'TEXT-ALIGN-LEFT': {
-        'textAlign': 'left'
-    },
-    'TEXT-ALIGN-CENTER': {
-        'textAlign': 'center'
-    },
-    'TEXT-ALIGN-RIGHT': {
-        'textAlign': 'right'
-    }
+  'BOLD': {
+    fontWeight: 'bold'
+  },
+  'ITALIC': {
+     'fontStyle': 'italic'
+  },
+  'UNDERLINE': {
+     'textDecoration': 'underline'
+  },
+  'FONT-COLOR': {
+    'color': 'black'
+  },
+  'FONT-SIZE': {
+     'fontSize': '12'
+  },
+  'TEXT-ALIGN-LEFT': {
+      'textAlign': 'left'
+  },
+  'TEXT-ALIGN-CENTER': {
+      'textAlign': 'center'
+  },
+  'TEXT-ALIGN-RIGHT': {
+      'textAlign': 'right'
+  }
 };
 
 const blockRenderMap = Map({
@@ -75,6 +75,32 @@ class MyEditor extends React.Component {
                 name: 'Frankie',
                 password: 'Frankie1!',
                 email: 'fflores@colgate.edu'
+            },
+            styleMap: {
+              'BOLD': {
+                fontWeight: 'bold'
+              },
+              'ITALIC': {
+                 'fontStyle': 'italic'
+              },
+              'UNDERLINE': {
+                 'textDecoration': 'underline'
+              },
+              'FONT-COLOR': {
+                'color': 'black'
+              },
+              'FONT-SIZE': {
+                 'fontSize': '12px'
+              },
+              'TEXT-ALIGN-LEFT': {
+                  'textAlign': 'left'
+              },
+              'TEXT-ALIGN-CENTER': {
+                  'textAlign': 'center'
+              },
+              'TEXT-ALIGN-RIGHT': {
+                  'textAlign': 'right'
+              }
             }
         };
 
@@ -131,27 +157,38 @@ class MyEditor extends React.Component {
         return "";
     }
 
-    onFontSizeClick(fontSize) {
-        var parsed = parseInt(fontSize);
-        styleMap['FONT-SIZE-' + fontSize] = {
-            'fontSize': parsed + 'px'
-        };
-        console.log(styleMap);
-        this.onChange(RichUtils.toggleInlineStyle(
-            this.state.editorState,
-            'FONT-SIZE-' + fontSize
-        ));
+    onFontSizeIncreaseClick() {
+      console.log(this.state.styleMap['FONT-SIZE']['fontSize'])
+      var font = this.state.styleMap['FONT-SIZE']['fontSize'];
+      var fontSize = parseInt(font.slice(0, font.indexOf('p')));
+      fontSize += 2;
+      this.state.styleMap['FONT-SIZE']['fontSize'] = fontSize.toString() + 'px';
+      this.onChange(RichUtils.toggleInlineStyle(
+        this.state.editorState,
+        'FONT-SIZE'
+      ));
+    }
+
+    onFontSizeDecreaseClick() {
+      var font = this.state.styleMap['FONT-SIZE']['fontSize'];
+      var fontSize = parseInt(font.slice(0, font.indexOf('p')));
+      fontSize -= 2;
+      this.state.styleMap['FONT-SIZE']['fontSize'] = fontSize.toString() + 'px';
+      this.onChange(RichUtils.toggleInlineStyle(
+        this.state.editorState,
+        'FONT-SIZE'
+      ));
     }
 
     onFontColorClick(fontColor) {
-        styleMap['FONT-COLOR-' + fontColor] = {
-            'color': fontColor
-        };
-        console.log(styleMap);
-        this.onChange(RichUtils.toggleInlineStyle(
-            this.state.editorState,
-            'FONT-COLOR-' + fontColor
-        ));
+     var hex = fontColor.hex;
+     this.state.styleMap['FONT-COLOR-' + hex] = {
+        'color': hex
+     };
+     this.onChange(RichUtils.toggleInlineStyle(
+       this.state.editorState,
+       'FONT-COLOR-' + hex
+     ));
     }
 
     _onTab(e) {
@@ -260,7 +297,8 @@ class MyEditor extends React.Component {
                                 <FontStyles
                                     editorState={this.state.editorState}
                                     onToggle={this._toggleInlineStyle.bind(this)}
-                                    onFontSizeClick={(fontSize) => this.onFontSizeClick(fontSize)}
+                                    onFontSizeIncreaseClick={() => this.onFontSizeIncreaseClick()}
+                                    onFontSizeDecreaseClick={() => this.onFontSizeDecreaseClick()}
                                     onFontColorClick={(fontColor) => this.onFontColorClick(fontColor)}
                                 />
                             </div>
@@ -275,7 +313,6 @@ class MyEditor extends React.Component {
                             <Editor
                                 customStyleMap={styleMap}
                                 editorState={this.state.editorState}
-                                //   onChange={this.onChange}
                                 onChange={this.onChange.bind(this)}
                                 onTab={this._onTab.bind(this)}
                                 blockRenderMap={extendedBlockRenderMap}

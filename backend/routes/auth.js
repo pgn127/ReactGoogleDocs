@@ -56,9 +56,8 @@ module.exports = function(passport) {
   // POST Login page
   router.post('/login', passport.authenticate('local'), function(req, res) {
     console.log('in login');
-    console.log(req);
-    console.log(res.session);
-    console.log(req.session);
+    // console.log(res.session);
+    // console.log(req.session);
     res.status(200).json({success:true, user:req.user});
   });
   // router.post('/login',
@@ -67,6 +66,9 @@ module.exports = function(passport) {
 
   // GET Logout page
   router.get('/logout', function(req, res) {
+  //   req.session.destroy(function (err) {
+  //   res.redirect('/'); //Inside a callback… bulletproof!
+  // });
     req.logout();
     res.send({success: true});
   });
