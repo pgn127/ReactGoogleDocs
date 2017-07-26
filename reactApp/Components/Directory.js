@@ -32,6 +32,7 @@ class Directory extends React.Component {
       docName: '',
       docPass: '',
       newDocId: '',
+      loggedIn: true,
     }
   }
   logout(){
@@ -41,7 +42,10 @@ class Directory extends React.Component {
     })
     .then((resp) => {
       if (resp.success){
-
+        this.props.store.delete('userId');
+        this.setState({
+          loggedIn: false,
+        })
       }
     })
     .catch((err)=>console.log(err))
