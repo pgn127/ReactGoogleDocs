@@ -13,9 +13,11 @@ import Dialog from 'material-ui/Dialog';
 import FontIcon from 'material-ui/FontIcon';
 import AppBar from 'material-ui/AppBar';
 import TextField from 'material-ui/TextField';
-import {Editor, EditorState, RichUtils, ContentState, DefaultDraftBlockRenderMap, convertFromRaw, convertToRaw} from 'draft-js';
+import {Editor, EditorState, RichUtils, ContentState, DefaultDraftBlockRenderMap, convertFromRaw, convertToRaw, Modifier} from 'draft-js';
 import { Map } from 'immutable';
 
+import io from 'socket.io-client'
+const socket = io.connect("http://localhost:3000");
 
 const styleMap = {
   'BOLD': {
@@ -101,7 +103,8 @@ class MyEditor extends React.Component {
               'TEXT-ALIGN-RIGHT': {
                   'textAlign': 'right'
               }
-            }
+            },
+            room: ""
         };
 
         // this.onChange = (editorState) => this.setState({editorState});
@@ -110,9 +113,37 @@ class MyEditor extends React.Component {
 
     onChange(editorState) {
         this.setState({editorState: editorState, saved: false})
+
+        var selectionState = editorState.getSelection();
+        var anchorKey = selectionState.getAnchorKey();
+        var currentContent = editorState.getCurrentContent();
+        var currentContentBlock = currentContent.getBlockForKey(anchorKey);
+        var start = selectionState.getStartOffset();
+        var end = selectionState.getEndOffset();
+        var selectedText = currentContentBlock.getText().slice(start, end);
+
+        console.log("onChange", currentContent.getPlainText());
+        console.log(start, end, selectedText);
+        socket.emit('cursor', {
+          room: this.state.room,
+          start: start,
+          end: end,
+          selectedText: selectedText,
+          currentContent: JSON.stringify(convertToRaw(this.state.editorState.getCurrentContent()))
+        });
+
     }
 
     componentDidMount() {
+      socket.on('redirect', () => {
+        alert("Full");
+        this.props.history.push('/directory');
+      });
+      socket.on('update', (data) => {
+        const updatedState = convertFromRaw(JSON.parse(data.currentContent));
+        this.setState({editorState: EditorState.createWithContent(updatedState)});
+
+      });
       console.log(this.props.match.params.docId);
         fetch('http://localhost:3000/documents/'+this.props.match.params.docId)
         .then((response) => {
@@ -125,9 +156,13 @@ class MyEditor extends React.Component {
             var currentDocument = Object.assign({}, resp.document, {content: contentState})
             this.setState({saved: false, currentDocument: currentDocument, collaborators: currentDocument.collaborators, title: currentDocument.title, editorState: EditorState.createWithContent(contentState) })
             console.log('document collaborators ', currentDocument.collaborators);
-            // this.setState({currentDocument: resp.document})
+
+            socket.emit('room', currentDocument.title);
+            this.setState({room: currentDocument.title});
+
         })
-        .catch((err)=>console.log('error pulling doc', err))
+        .catch((err)=>console.log('error pulling doc', err));
+
     }
 
 
@@ -239,6 +274,7 @@ class MyEditor extends React.Component {
             })
         })
         .then((response) => {
+            console.log("Response is", response);
             return response.json()
         })
         .then((resp) => {

@@ -21,7 +21,7 @@ app.use(session({
     //name: 'Catscoookie',
     store: new MongoStore({ mongooseConnection: mongoose.connection }),
     // proxy: true,
-    // resave: true,
+    resave: true,
     // saveUninitialized: true
 }));
 app.use(passport.initialize());
@@ -77,6 +77,35 @@ mongoose.connection.on('error', function() {//error connecting
   process.exit(1);
 });
 mongoose.connect(process.env.MONGODB_URI);
-app.listen(3000, function () {
+
+const server = app.listen(3000, function () {
   console.log('Backend server for Electron App running on port 3000!')
 })
+const io = require('socket.io')(server);
+
+io.on('connection', (socket) => {
+  console.log('a user connected');
+
+  socket.on('disconnect', () => {
+    console.log('user disconnected');
+  });
+
+  socket.on('room', (data) => {
+    console.log(data, 'joined');
+    socket.join(data);
+    console.log(io.nsps['/'].adapter.rooms[data].length);
+    if(io.nsps['/'].adapter.rooms[data].length >= 6){
+      socket.emit('redirect');
+    }
+  });
+
+  socket.on('cursor', (data) => {
+    console.log(data);
+    socket.broadcast.to('data.room').emit('update', data);
+  });
+
+  socket.on('limit', () => {
+    window.location.href = '/';
+  });
+
+});
