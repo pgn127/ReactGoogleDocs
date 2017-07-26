@@ -160,26 +160,51 @@ class MyEditor extends React.Component {
     }
 
     onFontSizeIncreaseClick() {
-      console.log(this.state.styleMap['FONT-SIZE']['fontSize'])
       var font = this.state.styleMap['FONT-SIZE']['fontSize'];
       var fontSize = parseInt(font.slice(0, font.indexOf('p')));
       fontSize += 2;
-      this.state.styleMap['FONT-SIZE']['fontSize'] = fontSize.toString() + 'px';
-      this.onChange(RichUtils.toggleInlineStyle(
-        this.state.editorState,
-        'FONT-SIZE'
-      ));
+      var newFontSize = fontSize.toString() + 'px';
+      var newStyleMap = Object.assign({}, this.state.styleMap, {'FONT-SIZE': {
+        fontSize: newFontSize
+      }});
+      this.setState({styleMap: newStyleMap}, () => {
+        this.state.styleMap['FONT-SIZE-' + fontSize.toString()] = {
+          fontSize: newFontSize
+        };
+        console.log(this.state.styleMap);
+        this.onChange(RichUtils.toggleInlineStyle(
+          this.state.editorState,
+           'FONT-SIZE-' + (fontSize - 2).toString()
+        ));
+        this.onChange(RichUtils.toggleInlineStyle(
+          this.state.editorState,
+           'FONT-SIZE-' + fontSize.toString()
+        ));
+      });
     }
 
     onFontSizeDecreaseClick() {
       var font = this.state.styleMap['FONT-SIZE']['fontSize'];
       var fontSize = parseInt(font.slice(0, font.indexOf('p')));
       fontSize -= 2;
-      this.state.styleMap['FONT-SIZE']['fontSize'] = fontSize.toString() + 'px';
-      this.onChange(RichUtils.toggleInlineStyle(
-        this.state.editorState,
-        'FONT-SIZE'
-      ));
+      var newFontSize = fontSize.toString() + 'px';
+      var newStyleMap = Object.assign({}, this.state.styleMap, {'FONT-SIZE': {
+        fontSize: newFontSize
+      }});
+      this.setState({styleMap: newStyleMap}, () => {
+        this.state.styleMap['FONT-SIZE-' + fontSize.toString()] = {
+          fontSize: newFontSize
+        };
+        console.log(this.state.styleMap);
+        this.onChange(RichUtils.toggleInlineStyle(
+          this.state.editorState,
+           'FONT-SIZE-' + (fontSize + 2).toString()
+        ));
+        this.onChange(RichUtils.toggleInlineStyle(
+          this.state.editorState,
+           'FONT-SIZE-' + fontSize.toString()
+        ));
+      });
     }
 
     onFontColorClick(fontColor) {
@@ -315,7 +340,7 @@ class MyEditor extends React.Component {
                         </div>
                         <div className="editor">
                             <Editor
-                                customStyleMap={styleMap}
+                                customStyleMap={this.state.styleMap}
                                 editorState={this.state.editorState}
                                 onChange={this.onChange.bind(this)}
                                 onTab={this._onTab.bind(this)}
