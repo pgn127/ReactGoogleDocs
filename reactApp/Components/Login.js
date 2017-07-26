@@ -20,7 +20,6 @@ import RaisedButton from 'material-ui/RaisedButton';
 const style = {
   margin: 12,
 };
-
 export default class Login extends React.Component {
   constructor(props) {
     super(props);
@@ -29,20 +28,24 @@ export default class Login extends React.Component {
       password: '',
       loggedin: false,
     };
-
   }
 
   componentDidMount(){
-    //   if (this.props.store.get('userId')){
     var storedUser = this.props.store.get('user')
+    console.log(this.props.store.get('user'));
     //TODO: make sure that this stored user is actually valid in mongodb
     if (storedUser && storedUser._id){
+      console.log('Logging in');
       this.setState({
-        loggedin:true,
+        email: storedUser.email,
+        password: storedUser.password,
+      }, function() {
+        this.handleSubmit();
       })
     }
   }
   handleSubmit(){
+    console.log(this.state);
     fetch('http://localhost:3000/login', {
       credentials: 'include',
       method: 'POST',
@@ -56,66 +59,54 @@ export default class Login extends React.Component {
       })
     })
     .then((response) => {
-        console.log('response of login is ', response);
-        return response.json()
+      console.log('response of login is ', response);
+      return response.json()
     })
     .then((resp) => {
-        //TODO: check if the user is in the response!!! handle errors
       console.log('resp.user in login response', resp.user);
       this.props.store.set('user', resp.user);
-      //console.log("USERSTORE", this.props.store.get('user'));
       this.setState({email: '', password: '', loggedin: true});
     })
     .catch( (err) => {
-        console.log('caught error in handle submit of login ', err);
-        alert(`error in handlesubmit of login ${err}`)
+      console.log('caught error in handle submit of login ', err);
+      alert(`error in handlesubmit of login ${err}`)
     })
   }
   render() {
     if (this.state.loggedin){
       return(<Redirect to='/directory' />)
     }
+    console.log(this.state);
     return (
-      <div>
-        {/* {this.state.loggedin ? <Directory user={this.state.user}/>: */}
-        <AppBar title='Docs'/>
-        {' '}
-        <br />
-        <div>
-          <div className="field">
-            <p className="control has-icons-left has-icons-right">
-              <input className="input" type="email" placeholder="Email" value={this.state.email} onChange={(e)=> this.setState({email: e.target.value})}/>
-              <span className="icon is-small is-left">
-                <i className="fa fa-envelope"></i>
-              </span>
-              <span className="icon is-small is-right">
-                <i className="fa fa-check"></i>
-              </span>
-            </p>
-          </div>
-          <div className="field">
-            <p className="control has-icons-left">
-              <input className="input" type="password" placeholder="Password" value={this.state.password} onChange={(e)=> this.setState({password: e.target.value})}/>
-              <span className="icon is-small is-left">
-                <i className="fa fa-lock"></i>
-              </span>
-            </p>
-          </div>
-          <div className="field">
-            <p className="control" style={{textAlign: 'center'}}>
-              {/* <button className="button is-success" onMouseDown={this.handleSubmit.bind(this)}>
-                Login
-              </button>
-              <Link className="button is-success" to="/register">Register</Link> */}
-              <RaisedButton onMouseDown={this.handleSubmit.bind(this)} label="Login" style={style} />
-              <br />
-              <Link to="/register"><RaisedButton label="Register" style={style} /></Link>
-            </p>
-          </div>
-        </div>
+      <div style={{display:'flex', alignItems: 'center', justifyContent: 'center'}}>
+        <Paper style={{height: 350, width: 400,}} zDepth={1}>
+          <h1 style={{textAlign: 'center', fontSize: '30px', paddingBottom: '20px', paddingTop:'20px'}}>Login to Docs</h1>
+          <div style={{display:'flex', alignItems: 'center', justifyContent: 'center', paddingTop:'10px'}}>
 
+            <TextField
+              hintText="Enter your email..."
+              type="email"
+              onChange={(e)=> this.setState({email: e.target.value})}
+            />
+
+          </div>
+          <div style={{display:'flex', alignItems: 'center', justifyContent: 'center', paddingTop:'10px'}}>
+
+            <TextField
+              hintText="Enter your password..."
+              type="password"
+              onChange={(e)=> this.setState({password: e.target.value})}
+            />
+
+          </div>
+          <div style={{display:'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop:'10px'}}>
+
+            <RaisedButton onMouseDown={this.handleSubmit.bind(this)} primary={true} label="Login" style={style} />
+            <Link to="/register"><RaisedButton label="Register" secondary={true} style={style} /></Link>
+
+          </div>
+        </Paper>
       </div>
-
     )
   }
 }

@@ -27,13 +27,15 @@ class Directory extends React.Component {
         email: 'fflores@colgate.edu',
       },
       user: {},
-      documents: [],
+      documents: [{_id:0, title:"You do not have any documents yet!", dateCreated: Date.now()}],
       value: 1,
       isOpen: false,
       docName: '',
       docPass: '',
       newDocId: '',
       loggedIn: true,
+      isDocModalOpen: false,
+      isPassModalOpen: false,
     }
   }
 
@@ -61,17 +63,6 @@ class Directory extends React.Component {
     .catch((err)=>console.log(err))
   }
 
-  logged(){
-    fetch('http://localhost:3000/isLoggedIn', {credentials: 'include'})
-    .then((response) => {
-      return response.json()
-    })
-    .then((resp) => {
-      console.log("pulled resp", resp);
-    })
-    .catch((err)=>console.log(err))
-  }
-
   filter(event, value){
     switch(value) {
       case 1:
@@ -92,18 +83,22 @@ class Directory extends React.Component {
     this.setState({value: value, isOpen: false})
   }
   dateSortNew(){
-    let documents = [...this.state.documents]
-    documents.sort(function(a,b){
-      return new Date(parseInt(b.dateCreated)) - new Date(parseInt(a.dateCreated));
-    });
-    this.setState({documents: documents});
+    if (this.state.documents.length > 0){
+      let documents = [...this.state.documents]
+      documents.sort(function(a,b){
+        return new Date(parseInt(b.dateCreated)) - new Date(parseInt(a.dateCreated));
+      });
+      this.setState({documents: documents});
+    }
   }
   dateSortOld(){
-    let documents = [...this.state.documents]
-    documents.sort(function(a,b){
-      return new Date(parseInt(a.dateCreated)) - new Date(parseInt(b.dateCreated));
-    });
-    this.setState({documents: documents});
+    if (this.state.documents.length > 0){
+      let documents = [...this.state.documents]
+      documents.sort(function(a,b){
+        return new Date(parseInt(a.dateCreated)) - new Date(parseInt(b.dateCreated));
+      });
+      this.setState({documents: documents});
+    }
   }
 
 
@@ -115,7 +110,9 @@ class Directory extends React.Component {
     })
     .then((resp) => {
       console.log("pulled resp", resp);
-      this.setState({documents: resp.documents})
+      if (resp.documents.length > 0){
+        this.setState({documents: resp.documents})
+      }
     })
     .catch((err)=>console.log(err))
   }
@@ -128,7 +125,9 @@ class Directory extends React.Component {
     })
     .then((resp) => {
       console.log("pulled resp", resp);
-      this.setState({documents: resp.documents})
+      if (resp.documents.length > 0){
+        this.setState({documents: resp.documents})
+      }
     })
     .catch((err)=>console.log(err))
   }
@@ -139,14 +138,14 @@ class Directory extends React.Component {
       isOpen: true,
       anchorEl: event.currentTarget,
       value: event.currentTarget.value,
-      ModalOpen: false,
+      isDocModalOpen: false,
     });
   };
-  modalOpen(){
-    this.setState({modalOpen: true});
+  onModalOpen(){
+    this.setState({isDocModalOpen: true});
   };
-  modalClose(){
-    this.setState({modalOpen: false});
+  onModalClose(){
+    this.setState({isDocModalOpen: false});
   };
   handleRequestClose(){
     this.setState({
@@ -202,11 +201,13 @@ class Directory extends React.Component {
 
     const actions = [
       <FlatButton
+        key={1}
         label="Cancel"
         primary={true}
-        onClick={this.modalClose.bind(this)}
+        onClick={this.onModalClose.bind(this)}
       />,
       <FlatButton
+        key={2}
         type="submit"
         label="Submit"
         primary={true}
@@ -223,24 +224,24 @@ class Directory extends React.Component {
       )
     }
     return (
-      <div>
+      <div style={{backgroundColor: 'white', }}>
 
           <h1 style={{textAlign: 'center', fontSize: '40px', paddingTop: '20px'}} >Document Directory</h1>
           <h2 style={{textAlign: 'center'}} >Open document to edit or create a new one!</h2>
           <h3>{`logged in as ${this.state.user.email} with id ${this.state.user._id}`}</h3>
-          <div>
+          <div style={{marginLeft: '5px', marginRight: '5px'}}>
 
           <div style={{display: 'flex', justifyContent: 'space-between'}}>
             <div>
-              <FloatingActionButton onTouchTap={this.modalOpen.bind(this)}>
+              <FloatingActionButton onTouchTap={this.onModalOpen.bind(this)}>
                 <ContentAdd />
               </FloatingActionButton>
               <Dialog
                 title="Create a New Document"
                 // actions={actions}
                 modal={false}
-                open={this.state.modalOpen}
-                onRequestClose={this.modalClose.bind(this)}
+                open={this.state.isDocModalOpen}
+                onRequestClose={this.onModalClose.bind(this)}
                 >
                   <form className="commentForm" onSubmit={this.newDocument.bind(this)}>
                       <input
@@ -263,9 +264,8 @@ class Directory extends React.Component {
 
               </Dialog>
             </div>
-            <div>
 
-
+          {this.state.documents[0]._id!==0?<div>
               <RaisedButton
                 onTouchTap={this.handleTouchTap.bind(this)}
                 label="Filter"
@@ -286,13 +286,14 @@ class Directory extends React.Component {
                     <MenuItem value={4} primaryText="Oldest" />
                   </Menu>
                 </Popover>
-              </div>
+              </div>: null}
             </div>
 
             {this.state.documents.map((doc, i)=>
-              <div>
+              <div key={i}>
                 <List>
-                  <Link to={'/editor/'+doc._id }>
+                  {doc._id ?
+                  <Link key={i} to={'/editor/'+doc._id}>
                   <ListItem
                     key={i}
                     leftAvatar={<Avatar icon={<ActionAssignment />} backgroundColor={blue500} />}
@@ -301,7 +302,8 @@ class Directory extends React.Component {
                     // onMouseDown={(e)=>this}
                     secondaryText={new Date(parseInt(doc.dateCreated)).toLocaleString()}
                   />
-                  </Link>
+                </Link>:
+                <div key={i} style={{textAlign: 'center'}}>You current do not have any documents...</div>}
                 </List>
                 <Divider />
               </div>
@@ -309,8 +311,7 @@ class Directory extends React.Component {
             )}
 
           </div>
-          <button onMouseDown={this.logout.bind(this)}>Logout</button>
-          <button onMouseDown={this.logged.bind(this)}>Test to Check if logged in</button>
+          <RaisedButton label="Logout" secondary={true} onMouseDown={this.logout.bind(this)}/>
         </div>
       )
     }

@@ -15,6 +15,10 @@ import AppBar from 'material-ui/AppBar';
 import TextField from 'material-ui/TextField';
 import {Editor, EditorState, RichUtils, ContentState, DefaultDraftBlockRenderMap, convertFromRaw, convertToRaw} from 'draft-js';
 import { Map } from 'immutable';
+import Popover, {PopoverAnimationVertical} from 'material-ui/Popover';
+import Menu from 'material-ui/Menu';
+import MenuItem from 'material-ui/MenuItem';
+
 
 
 const styleMap = {
@@ -71,6 +75,7 @@ class MyEditor extends React.Component {
             collaborators: [],
             currentDocument:  {},
             goBack: false,
+            isFileOpen: false,
             currentUser: {
                 _id: '597797018cccf651b76f25ac',
                 name: 'Frankie',
@@ -287,7 +292,39 @@ class MyEditor extends React.Component {
         this.setState({alertOpen: !this.state.saved});
         console.log('on alert open called bc this.state.saved is ', this.state.saved, 'and this.state.alertOpen ', this.state.alertOpen);
     }
-
+    handleTouchTap(event){
+      // This prevents ghost click.
+      event.preventDefault();
+      this.setState({
+        isFileOpen: true,
+        anchorEl: event.currentTarget,
+        value: event.currentTarget.value,
+      });
+    };
+    menuSelection(event, value){
+      // switch(value) {
+      //   case 1:
+      //   this.ownedByAll();
+      //   break;
+      //   case 2:
+      //   this.ownedByMe();
+      //   break;
+      //   case 3:
+      //   this.dateSortNew();
+      //   break;
+      //   case 4:
+      //   this.dateSortOld();
+      //   break;
+      //   default:
+      //   this.ownedByAll();
+      // }
+      console.log(value);
+    }
+    handleRequestClose(){
+      this.setState({
+        isFileOpen: false,
+      });
+    };
     render() {
       console.log(this.state.saved);
         const actions = [
@@ -316,13 +353,35 @@ class MyEditor extends React.Component {
 
                     <div className="docContainer">
                         <div className='documentControls'>
-                            <div>File Edit View Help</div>
+                          <div>
+                            <FlatButton label="File" onTouchTap={this.handleTouchTap.bind(this)} />
+                            <FlatButton label="Edit" />
+                            <FlatButton label="View" />
+                            <FlatButton label="Help" />
+                          </div>
+                          
+                            <Popover
+                              open={this.state.isFileOpen}
+                              anchorEl={this.state.anchorEl}
+                              anchorOrigin={{horizontal: 'middle', vertical: 'bottom'}}
+                              targetOrigin={{horizontal: 'middle', vertical: 'bottom'}}
+                              onRequestClose={this.handleRequestClose.bind(this)}
+                              animation={PopoverAnimationVertical}
+                              useLayerForClickAway={true}
+                              >
+                                <Menu onChange={this.menuSelection.bind(this)}>
+                                  <MenuItem value={1} primaryText="New"/>
+                                  <MenuItem value={2} primaryText="Open" />
+                                  <MenuItem value={3} primaryText="Save" />
+                                  <MenuItem value={4} primaryText="Close" />
+                                </Menu>
+                              </Popover>
 
                             <div className="rightSideControls">
-                                Shared with:
-                                <List>
-                                    {this.state.collaborators.map((user) => (
-                                        <span className="collaboratorIcon" style={{backgroundColor: randomColor()}}>{user.name.slice(0,1)}</span>
+                                <span style={{display: 'flex', alignSelf: 'center'}}>Shared with:</span>
+                                <List style={{paddingLeft: '15px', paddingRight: '10px'}}>
+                                    {this.state.collaborators.map((user, i) => (
+                                        <span key={i} className="collaboratorIcon" style={{backgroundColor: randomColor()}}>{user.name.slice(0,1)}</span>
 
                                     ))}
 
