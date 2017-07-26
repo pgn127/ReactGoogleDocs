@@ -40,7 +40,7 @@ class Directory extends React.Component {
     })
     .then((resp) => {
       if (resp.success){
-        console.log("Success logging out");
+
       }
     })
     .catch((err)=>console.log(err))
@@ -149,6 +149,9 @@ class Directory extends React.Component {
     this.setState({
       docPass: e.target.value
     })
+  }
+  newDocument(){
+    
   }
   render() {
       const testDoc = {
@@ -262,13 +265,8 @@ class Directory extends React.Component {
             )}
 
           </div>
-          <div style={{textAlign: 'center'}}>
-            <br />
-            {/* <button onMouseDown={this.logout.bind(this)}>Logout</button> */}
-            <RaisedButton onMouseDown={this.logout.bind(this)}> <Link to="/">LOGOUT</Link></RaisedButton>
-            {/* <button onMouseDown={this.logged.bind(this)}>Test to Check if logged in</button> */}
-            <br />
-          </div>
+          <button onMouseDown={this.logout.bind(this)}>Logout</button>
+          <button onMouseDown={this.logged.bind(this)}>Test to Check if logged in</button>
         </div>
       )
     }

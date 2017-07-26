@@ -251,7 +251,9 @@ class MyEditor extends React.Component {
     render() {
         const actions = [
             <FlatButton label="Cancel" primary={true} onTouchTap={this.onAlertClose.bind(this)}/>,
-            <FlatButton label="Go back anyway" primary={true} onTouchTap={this.onAlertOk.bind(this)}/>];
+            <Link to='/directory'>
+              <FlatButton label="Go back anyway" primary={true} onTouchTap={this.onAlertOk.bind(this)}/>
+            </Link>]
             return (
                 <div >
                     <AppBar
@@ -290,7 +292,7 @@ class MyEditor extends React.Component {
                             </div>
 
                         </div>
-                        <Link to='/directory' >Go Back</Link>
+
 
                         <div className="btn-toolbar editorToolbar">
                             <div className="btn-group">
