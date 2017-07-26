@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { Link } from 'react-router-dom';
+import { Link, Redirect } from 'react-router-dom';
 import 'draft-js/dist/Draft.css';
 import randomColor from 'randomcolor'; // import the script
 import FontStyles from './FontStyles.js';
@@ -70,6 +70,7 @@ class MyEditor extends React.Component {
             alertOpen: false,
             collaborators: [],
             currentDocument:  {},
+            goBack: false,
             currentUser: {
                 _id: '597797018cccf651b76f25ac',
                 name: 'Frankie',
@@ -273,7 +274,7 @@ class MyEditor extends React.Component {
 
     //called when user clicks ok and decides to not save changes
     onAlertOk() {
-        this.setState({alertOpen: false});
+        this.setState({alertOpen: false, goBack: true});
         //TODO: go back to documents page
     }
 
@@ -283,22 +284,26 @@ class MyEditor extends React.Component {
     }
 
     onAlertOpen() {
-        this.setState({alertOpen: true});
+        this.setState({alertOpen: !this.state.saved});
         console.log('on alert open called bc this.state.saved is ', this.state.saved, 'and this.state.alertOpen ', this.state.alertOpen);
     }
 
     render() {
+      console.log(this.state.saved);
         const actions = [
             <FlatButton label="Cancel" primary={true} onTouchTap={this.onAlertClose.bind(this)}/>,
-            <Link to='/directory'>
-              <FlatButton label="Go back anyway" primary={true} onTouchTap={this.onAlertOk.bind(this)}/>
-            </Link>]
+              <FlatButton label="Go back anyway" primary={true} onTouchTap={this.onAlertOk.bind(this)}/>]
+            if (this.state.goBack){
+              return(
+                <Redirect to='/directory' />
+              )
+            }
             return (
                 <div >
                     <AppBar
                         title={
                             <TextField id="text-field-controlled" inputStyle={this.state.title === 'Untitled Document' ? {color: 'white', fontStyle: 'italic'}: {color: 'white'}} underlineShow={false} value={this.state.title} onChange={this.onTitleEdit.bind(this)} />}
-                        onLeftIconButtonTouchTap={this.onAlertOpen.bind(this)}
+                        onLeftIconButtonTouchTap={this.state.saved ? this.onAlertOk.bind(this): this.onAlertOpen.bind(this)}
                     />
 
                     <Dialog
