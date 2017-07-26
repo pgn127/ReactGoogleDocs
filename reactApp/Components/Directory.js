@@ -33,19 +33,20 @@ class Directory extends React.Component {
       docName: '',
       docPass: '',
       newDocId: '',
+      loggedIn: true,
     }
   }
 
   componentWillMount(){
-    console.log('user id in component did mount', this.props.store.get('userId'), this.props.store.get('userId'));
-    this.setState({user: this.props.store.get('user')})
+    console.log('user from store', this.props.store.get('user'));
+    const user = this.props.store.get('user')
+    this.setState({user: user})
 
   }
 
   componentDidMount() {
       this.ownedByAll()
   }
-
   logout(){
     fetch('http://localhost:3000/logout')
     .then((response) => {
@@ -53,7 +54,10 @@ class Directory extends React.Component {
     })
     .then((resp) => {
       if (resp.success){
-
+        this.props.store.delete('user');
+        this.setState({
+          loggedIn: false,
+        })
       }
     })
     .catch((err)=>console.log(err))
@@ -106,7 +110,7 @@ class Directory extends React.Component {
 
 
   ownedByAll(){
-    //   console.log('');
+    console.log(this.state.user._id);
     fetch('http://localhost:3000/documents/all/'+ this.state.user._id)
     .then((response) => {
       return response.json()
@@ -213,8 +217,11 @@ class Directory extends React.Component {
     // console.log(this.state.newDocId);
     if (this.state.newDocId){
       return (
-
         <Redirect to={"/editor/"+this.state.newDocId} />
+      )
+    }else if (!this.state.loggedIn){
+      return (
+        <Redirect to={'/'} />
       )
     }
     return (

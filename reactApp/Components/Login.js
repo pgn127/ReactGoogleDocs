@@ -28,7 +28,6 @@ export default class Login extends React.Component {
       email: '',
       password: '',
       loggedin: false,
-      user: {}
     };
 
   }
@@ -44,41 +43,6 @@ export default class Login extends React.Component {
     }
   }
   handleSubmit(){
-    // console.log("in submit login ");
-
-//     axios({
-//         method: 'post',
-//         url: 'http://localhost:3000/login',
-//   data: {
-//       email: this.state.email,
-//       password: this.state.password
-//   },
-//   headers : {
-//         "Content-Type" : "application/json"
-//       },
-//       transformRequest: [(data) => {
-//         return JSON.stringify(data);
-//       }]
-// })
-// .then(function (response) {
-//   console.log('axios ', response);
-// })
-// .catch(function (error) {
-//   console.log('axios error ', error);
-// });
-
-  //   axios.post('/login', {
-  //       email: this.state.email,
-  //       password: this.state.password
-  // })
-  // .then(function (response) {
-  //   console.log('axios ', response);
-  // })
-  // .catch(function (error) {
-  //   console.log('axios error ', error);
-  // });
-
-
     fetch('http://localhost:3000/login', {
       credentials: 'include',
       method: 'POST',
@@ -98,9 +62,9 @@ export default class Login extends React.Component {
     .then((resp) => {
         //TODO: check if the user is in the response!!! handle errors
       console.log('resp.user in login response', resp.user);
-      this.props.store.set('userId', resp.user._id);
       this.props.store.set('user', resp.user);
-      this.setState({email: '', password: '', loggedin: true, user: resp.user});
+      //console.log("USERSTORE", this.props.store.get('user'));
+      this.setState({email: '', password: '', loggedin: true});
     })
     .catch( (err) => {
         console.log('caught error in handle submit of login ', err);
