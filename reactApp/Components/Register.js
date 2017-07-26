@@ -28,7 +28,6 @@ export default class Register extends React.Component {
     .then((response) => response.json())
     .then((resp) => {
       this.setState({email: '', password: ''});
-      this.props.navigation.goBack();
     })
   }
   render() {
