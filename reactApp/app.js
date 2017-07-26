@@ -48,11 +48,11 @@ const App = () => (
 
 ReactDOM.render(
 
-  // <MuiThemeProvider>
-  //     <Root history={history}/>
-  // </MuiThemeProvider>,
+  <MuiThemeProvider>
+      <Root history={history}/>
+  </MuiThemeProvider>,
 
-  <App />,
+  // <App />,
 
   document.getElementById('root')
 );

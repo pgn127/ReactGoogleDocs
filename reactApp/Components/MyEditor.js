@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { Link } from 'react-router-dom';
 import 'draft-js/dist/Draft.css';
 import randomColor from 'randomcolor'; // import the script
 import FontStyles from './FontStyles.js';
@@ -86,7 +87,8 @@ class MyEditor extends React.Component {
     }
 
     componentDidMount() {
-        fetch('http://localhost:3000/documents/5977add188553348069400e1')
+      console.log(this.props.match.params.docId);
+        fetch('http://localhost:3000/documents/'+this.props.match.params.docId)
         .then((response) => {
 
             return response.json()
@@ -251,7 +253,7 @@ class MyEditor extends React.Component {
                             </div>
 
                         </div>
-
+                        <Link to='/directory' >Go Back</Link>
 
                         <div className="btn-toolbar editorToolbar">
                             <div className="btn-group">

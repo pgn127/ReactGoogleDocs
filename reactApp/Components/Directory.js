@@ -245,13 +245,16 @@ class Directory extends React.Component {
             {this.state.documents.map((doc, i)=>
               <div>
                 <List>
+                  <Link to={'/editor/'+doc._id }>
                   <ListItem
                     key={i}
                     leftAvatar={<Avatar icon={<ActionAssignment />} backgroundColor={blue500} />}
                     rightIcon={<ActionInfo />}
                     primaryText={doc.title}
+                    // onMouseDown={(e)=>this}
                     secondaryText={new Date(parseInt(doc.dateCreated)).toLocaleString()}
                   />
+                  </Link>
                 </List>
                 <Divider />
               </div>
