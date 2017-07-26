@@ -13,8 +13,15 @@ router.use(bodyParser.urlencoded({ extended: false }));
 
 module.exports = function(passport) {
 
-  // GET registration page
 
+//when login is successful, we are sent ot this route where we send back information for react to route to directory
+  router.get('/login/success', function (req, res) {
+    //eventually this should send over the user we will have in req.user
+    res.status(200).json({success:true, user:req.user});
+  })
+
+
+    // GET registration page
   router.get('/register', function(req, res) {
     console.log('in register');
   });
@@ -26,11 +33,6 @@ module.exports = function(passport) {
 
   router.post('/register', function(req, res) {
     console.log('register');
-    // if (!validateReq(req.body)) {
-    //   return res.json({
-    //     error: "Passwords don't match."
-    //   });
-    // }
     var u = new models.User({
       name: req.body.name,
       password: req.body.password,
@@ -49,20 +51,24 @@ module.exports = function(passport) {
   });
 
   // GET Login page
-  // router.get('/login', function(req, res) {
-  //   res.render('login');
-  // });
+  //sent here when post to login goes to failure redirect
+  router.get('/login/failure', function(req, res) {
+      console.log('in auth.js get login failure');
+    // res.render('login');
+    res.status(500).json({success:false});
+  });
 
   // POST Login page
-  router.post('/login', passport.authenticate('local'), function(req, res) {
-    console.log('in login');
-    // console.log(res.session);
-    // console.log(req.session);
-    res.status(200).json({success:true, user:req.user});
-  });
-  // router.post('/login',
-  // passport.authenticate('local', { successRedirect: '/',
-  //                                  failureRedirect: '/login' }));
+  // router.post('/login', passport.authenticate('local'), function(req, res) {
+  //   console.log('in post login req is ', req, 'res is ', res);
+  //   // console.log(res.session);
+  //   // console.log(req.session);
+  //   res.status(200).json({success:true})//, user:req.user});
+  // });
+
+
+  router.post('/login', passport.authenticate('local', { successRedirect: '/login/success',
+                                   failureRedirect: '/login/failure' }));
 
   // GET Logout page
   router.get('/logout', function(req, res) {

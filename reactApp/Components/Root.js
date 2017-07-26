@@ -27,7 +27,7 @@ class Root extends React.Component {
       return response.json()
     })
     .then((resp) => {
-      console.log("pulled resp", resp);
+    //   console.log("pulled resp", resp);
       this.setState({loggedIn: resp.loggedIn});
     })
     .catch((err)=>console.log(err))
@@ -39,12 +39,11 @@ class Root extends React.Component {
       <Router history={this.props.history}  >
 
 
-        <Switch>
-          <Route exact path="/" component={Login}/>
-          <Route exact path="/register" component={Register}/>
-          <Route exact path="/directory/" component={Directory} />
-          <Route path="/editor/:docId" component={MyEditor} />
-          <Route path ="/" component={Login}/>
+          <Switch>
+              <Route exact path="/" component={Login}/>
+              <Route exact path="/register" component={Register}/>
+              <Route exact path="/directory" component={Directory} />
+              <Route path ="/" component={Login}/>
         </Switch>
       </Router>
     );
