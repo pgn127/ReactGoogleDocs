@@ -45,6 +45,7 @@ class Directory extends React.Component {
     })
     .catch((err)=>console.log(err))
   }
+
   logged(){
     fetch('http://localhost:3000/isLoggedIn', {credentials: 'include'})
     .then((response) => {
@@ -150,6 +151,18 @@ class Directory extends React.Component {
     })
   }
   render() {
+      const testDoc = {
+          content: "",
+          _id: "5977add188553348069400e1",
+          author: "597797018cccf651b76f25ac",
+          shareLink: "sharelink.com",
+          dateCreated: "1501015505230",
+          collaborators: [
+            "597797018cccf651b76f25ac"
+          ],
+          title: "updatedtitle"
+      }
+
     console.log(this.state);
     const actions = [
       <FlatButton
@@ -252,5 +265,6 @@ class Directory extends React.Component {
       )
     }
   };
+
 
   export default Directory;
