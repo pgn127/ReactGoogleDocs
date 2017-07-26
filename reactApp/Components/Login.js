@@ -27,6 +27,7 @@ export default class Login extends React.Component {
   handleSubmit(){
     console.log("in submit");
     fetch('http://localhost:3000/login', {
+      credentials: 'include',
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -44,9 +45,12 @@ export default class Login extends React.Component {
     })
   }
   render() {
+    if (this.state.loggedin){
+      return(<Redirect to='/directory' />)
+    }
     return (
       <div>
-              {this.state.loggedin ? <Directory user={this.state.user}/>:
+              {/* {this.state.loggedin ? <Directory user={this.state.user}/>: */}
               <div>
                 <div className="field">
                     <p className="control has-icons-left has-icons-right">
@@ -73,10 +77,11 @@ export default class Login extends React.Component {
                             Login
                             {/* Login */}
                         </button>
-                        <Link to="/directory"> hey </Link>
+                        <Link className="button is-success" to="/register">Register</Link>
+                        <Link to="/directory"> Test Link to Directory </Link>
                     </p>
                 </div>
-              </div>}
+              </div>
 
 </div>
 

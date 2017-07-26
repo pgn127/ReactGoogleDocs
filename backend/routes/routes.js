@@ -19,13 +19,13 @@ router.get('/isLoggedIn', function (req, res) {
   }
 })
 
-router.use(function(req, res, next){
-  if (!req.user) {
-    res.send({error: "User is not logged in."});
-  } else {
-    return next();
-  }
-});
+// router.use(function(req, res, next){
+//   if (!req.user) {
+//     res.send({error: "User is not logged in."});
+//   } else {
+//     return next();
+//   }
+// });
 
 //get all documents where user is an owner OR collaborator
 router.get('/documents/all/:userId', function(req,res) {

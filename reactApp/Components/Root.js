@@ -22,7 +22,7 @@ class Root extends React.Component {
   // }
 
   componentWillMount(){
-    fetch('http://localhost:3000/isLoggedIn')
+    fetch('http://localhost:3000/isLoggedIn', {credentials: 'include'})
     .then((response) => {
       return response.json()
     })
@@ -38,7 +38,7 @@ class Root extends React.Component {
     return (
       <Router history={this.props.history}  >
 
-        
+
         <Switch>
           <Route exact path="/" component={Login}/>
           <Route exact path="/register" component={Register}/>
