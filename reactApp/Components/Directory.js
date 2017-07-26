@@ -12,6 +12,7 @@ import DropDownMenu from 'material-ui/DropDownMenu';
 import MenuItem from 'material-ui/MenuItem';
 import FloatingActionButton from 'material-ui/FloatingActionButton';
 import ContentAdd from 'material-ui/svg-icons/content/add';
+import RaisedButton from 'material-ui/RaisedButton';
 
 class Directory extends React.Component {
   constructor(props){
@@ -34,7 +35,7 @@ class Directory extends React.Component {
     })
     .then((resp) => {
       if (resp.success){
-
+        console.log("Success logging out");
       }
     })
     .catch((err)=>console.log(err))
@@ -159,8 +160,13 @@ class Directory extends React.Component {
             )}
 
           </div>
-          <button onMouseDown={this.logout.bind(this)}>Logout</button>
-          <button onMouseDown={this.logged.bind(this)}>Test to Check if logged in</button>
+          <div style={{textAlign: 'center'}}>
+            <br />
+            {/* <button onMouseDown={this.logout.bind(this)}>Logout</button> */}
+            <RaisedButton onMouseDown={this.logout.bind(this)}> <Link to="/">LOGOUT</Link></RaisedButton>
+            {/* <button onMouseDown={this.logged.bind(this)}>Test to Check if logged in</button> */}
+            <br />
+          </div>
         </div>
       )
     }

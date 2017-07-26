@@ -170,7 +170,6 @@ onFontSizeIncreaseClick() {
       <div >
           <AppBar title={this.state.documentName}/>
           <div className="docContainer">
-
               {/* <IconButton tooltip="Font Icon">
                   <FontIcon className="muidocs-icon-action-home" />
               </IconButton> */}
