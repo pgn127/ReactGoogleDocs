@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Redirect} from 'react-router-dom';
 import {List, ListItem} from 'material-ui/List';
 import ActionInfo from 'material-ui/svg-icons/action/info';
 import Divider from 'material-ui/Divider';
@@ -31,6 +31,7 @@ class Directory extends React.Component {
       isOpen: false,
       docName: '',
       docPass: '',
+      newDocId: '',
     }
   }
   logout(){
@@ -57,6 +58,7 @@ class Directory extends React.Component {
     .catch((err)=>console.log(err))
   }
   componentDidMount(){
+    console.log(this.props.store.get('userId'));
     this.ownedByAll()
   }
   filter(event, value){
@@ -151,7 +153,29 @@ class Directory extends React.Component {
     })
   }
   newDocument(){
-    
+    fetch('http://localhost:3000/documents/new/' + this.props.store.get('userId'), {
+        method: 'POST',
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            title: this.state.docName,
+            //password: newPassword,
+            //   collaborators: newCollaborators
+
+        })
+    })
+    .then((response) => {
+        return response.json()
+    })
+    .then((resp) => {
+      console.log("DOC", resp.document);
+      console.log("DOCID", resp.document._id);
+      this.setState({
+        newDocId: resp.document._id
+      })
+    })
+    .catch((err)=>console.log(err))
   }
   render() {
       const testDoc = {
@@ -179,6 +203,13 @@ class Directory extends React.Component {
         primary={true}
       />,
     ];
+    console.log(this.state.newDocId);
+    if (this.state.newDocId){
+      return (
+
+        <Redirect to={"/editor/"+this.state.newDocId} />
+      )
+    }
     return (
       <div>
         <h1 style={{textAlign: 'center', fontSize: '40px', paddingTop: '20px'}} >Document Directory</h1>
@@ -198,7 +229,7 @@ class Directory extends React.Component {
                 open={this.state.modalOpen}
                 onRequestClose={this.modalClose.bind(this)}
                 >
-                  <form className="commentForm" onSubmit={this.handleSubmit}>
+                  <form className="commentForm" onSubmit={this.newDocument.bind(this)}>
                       <input
                         type="text"
                         placeholder="Your Document Name"

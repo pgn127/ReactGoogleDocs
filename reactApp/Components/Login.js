@@ -32,6 +32,14 @@ export default class Login extends React.Component {
     };
 
   }
+
+  componentDidMount(){
+    if (this.props.store.get('userId')){
+      this.setState({
+        loggedin:true,
+      })
+    }
+  }
   handleSubmit(){
     console.log("in submit");
     fetch('http://localhost:3000/login', {
@@ -49,6 +57,7 @@ export default class Login extends React.Component {
     .then((response) => response.json())
     .then((resp) => {
       console.log(resp.user);
+      this.props.store.set('userId', resp.user._id);
       this.setState({email: '', password: '', loggedin: true, user: resp.user});
     })
   }

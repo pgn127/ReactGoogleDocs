@@ -113,6 +113,8 @@ class MyEditor extends React.Component {
     }
 
     componentDidMount() {
+      console.log(this.props);
+      console.log(this.props.match);
       console.log(this.props.match.params.docId);
         fetch('http://localhost:3000/documents/'+this.props.match.params.docId)
         .then((response) => {
@@ -121,7 +123,7 @@ class MyEditor extends React.Component {
         })
         .then((resp) => {
             console.log("pulled doc", resp.document);
-            const contentState = convertFromRaw( JSON.parse(resp.document.content) );
+            const contentState = convertFromRaw( JSON.parse(resp.document.content) ) ;
             var currentDocument = Object.assign({}, resp.document, {content: contentState})
             this.setState({saved: false, currentDocument: currentDocument, collaborators: currentDocument.collaborators, title: currentDocument.title, editorState: EditorState.createWithContent(contentState) })
             console.log('document collaborators ', currentDocument.collaborators);
