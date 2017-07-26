@@ -1,17 +1,20 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-//import MobileTearSheet from '../../../MobileTearSheet';
 import {List, ListItem} from 'material-ui/List';
 import ActionInfo from 'material-ui/svg-icons/action/info';
 import Divider from 'material-ui/Divider';
-import Subheader from 'material-ui/Subheader';
 import Avatar from 'material-ui/Avatar';
 import ActionAssignment from 'material-ui/svg-icons/action/assignment';
 import {blue500, yellow600} from 'material-ui/styles/colors';
-import DropDownMenu from 'material-ui/DropDownMenu';
+import Menu from 'material-ui/Menu';
 import MenuItem from 'material-ui/MenuItem';
 import FloatingActionButton from 'material-ui/FloatingActionButton';
 import ContentAdd from 'material-ui/svg-icons/content/add';
+import RaisedButton from 'material-ui/RaisedButton';
+import Popover, {PopoverAnimationVertical} from 'material-ui/Popover';
+import Dialog from 'material-ui/Dialog';
+import FlatButton from 'material-ui/FlatButton';
+import TextField from 'material-ui/TextField';
 
 class Directory extends React.Component {
   constructor(props){
@@ -25,6 +28,9 @@ class Directory extends React.Component {
       },
       documents: [],
       value: 1,
+      isOpen: false,
+      docName: '',
+      docPass: '',
     }
   }
   logout(){
@@ -52,7 +58,7 @@ class Directory extends React.Component {
   componentDidMount(){
     this.ownedByAll()
   }
-  filter(event, index, value){
+  filter(event, value){
     switch(value) {
       case 1:
       this.ownedByAll();
@@ -69,24 +75,18 @@ class Directory extends React.Component {
       default:
       this.ownedByAll();
     }
-    this.setState({value})
+    this.setState({value: value, isOpen: false})
   }
   dateSortNew(){
     let documents = [...this.state.documents]
-
     documents.sort(function(a,b){
-      // Turn your strings into dates, and then subtract them
-      // to get a value that is either negative, positive, or zero.
       return new Date(parseInt(b.dateCreated)) - new Date(parseInt(a.dateCreated));
     });
     this.setState({documents: documents});
   }
   dateSortOld(){
     let documents = [...this.state.documents]
-
     documents.sort(function(a,b){
-      // Turn your strings into dates, and then subtract them
-      // to get a value that is either negative, positive, or zero.
       return new Date(parseInt(a.dateCreated)) - new Date(parseInt(b.dateCreated));
     });
     this.setState({documents: documents});
@@ -113,32 +113,119 @@ class Directory extends React.Component {
     })
     .catch((err)=>console.log(err))
   }
+  handleTouchTap(event){
+    // This prevents ghost click.
+    event.preventDefault();
+    this.setState({
+      isOpen: true,
+      anchorEl: event.currentTarget,
+      value: event.currentTarget.value,
+      ModalOpen: false,
+    });
+  };
+  modalOpen(){
+    this.setState({modalOpen: true});
+  };
+  modalClose(){
+    this.setState({modalOpen: false});
+  };
+  handleRequestClose(){
+    this.setState({
+      isOpen: false,
+    });
+  };
+  formSubmit(e){
+    e.preventDefault();
+    alert('Submitted form!');
+    this.modalClose();
+  }
+  titleChange(e){
+    this.setState({
+      docName: e.target.value
+    })
+  }
+  passChange(e){
+    this.setState({
+      docPass: e.target.value
+    })
+  }
   render() {
     console.log(this.state);
-
+    const actions = [
+      <FlatButton
+        label="Cancel"
+        primary={true}
+        onClick={this.modalClose.bind(this)}
+      />,
+      <FlatButton
+        type="submit"
+        label="Submit"
+        primary={true}
+      />,
+    ];
     return (
       <div>
-        <h1 style={{textAlign: 'center'}} >Document Directory</h1>
+        <h1 style={{textAlign: 'center', fontSize: '40px', paddingTop: '20px'}} >Document Directory</h1>
         <h2 style={{textAlign: 'center'}} >Open document to edit or create a new one!</h2>
-        <div>
-          <FloatingActionButton>
-            <ContentAdd />
-          </FloatingActionButton>
-          <div className="align-right">
-            <div>
-              Filter By:
 
-              <DropDownMenu
-                value={this.state.value}
-                onChange={this.filter.bind(this)}
-                className="customWidth"
-                autoWidth={false}
+        <div>
+
+          <div style={{display: 'flex', justifyContent: 'space-between'}}>
+            <div>
+              <FloatingActionButton onTouchTap={this.modalOpen.bind(this)}>
+                <ContentAdd />
+              </FloatingActionButton>
+              <Dialog
+                title="Create a New Document"
+                // actions={actions}
+                modal={false}
+                open={this.state.modalOpen}
+                onRequestClose={this.modalClose.bind(this)}
                 >
-                  <MenuItem value={1} primaryText="All Documents" />
-                  <MenuItem value={2} primaryText="Owned By Me" />
-                  <MenuItem value={3} primaryText="Date Created" />
-                  <MenuItem value={4} primaryText="Oldest" />
-                </DropDownMenu>
+                  <form className="commentForm" onSubmit={this.handleSubmit}>
+                      <input
+                        type="text"
+                        placeholder="Your Document Name"
+                        value={this.state.docName}
+                        onChange={this.titleChange.bind(this)}
+                      />
+                      <input
+                        type="text"
+                        placeholder="Password for Document"
+                        value={this.state.docPass}
+                        onChange={this.passChange.bind(this)}
+                      />
+
+                    <div style={{ textAlign: 'right', padding: 8, margin: '24px -24px -24px -24px' }}>
+                      {actions}
+                    </div>
+                </form>
+
+              </Dialog>
+            </div>
+            <div>
+
+
+              <RaisedButton
+                onTouchTap={this.handleTouchTap.bind(this)}
+                label="Filter"
+              />
+              <Popover
+                open={this.state.isOpen}
+                anchorEl={this.state.anchorEl}
+                anchorOrigin={{horizontal: 'left', vertical: 'bottom'}}
+                targetOrigin={{horizontal: 'left', vertical: 'center'}}
+                onRequestClose={this.handleRequestClose.bind(this)}
+                animation={PopoverAnimationVertical}
+                useLayerForClickAway={true}
+                >
+                  <Menu onChange={this.filter.bind(this)}>
+                    <MenuItem value={1} primaryText="All Documents"/>
+                    <MenuItem value={2} primaryText="Owned By Me" />
+                    <MenuItem value={3} primaryText="Date Created" />
+                    <MenuItem value={4} primaryText="Oldest" />
+                  </Menu>
+                </Popover>
               </div>
             </div>
 
