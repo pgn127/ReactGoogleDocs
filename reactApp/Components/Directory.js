@@ -49,7 +49,7 @@ class Directory extends React.Component {
       this.ownedByAll()
   }
   logout(){
-    fetch(baseURL+'logout')
+    fetch(baseURL+'/logout')
     .then((response) => {
       return response.json()
     })
@@ -105,12 +105,12 @@ class Directory extends React.Component {
 
   ownedByAll(){
     console.log(this.state.user._id);
-    fetch(baseURL+'documents/all/'+ this.state.user._id)
+    fetch(baseURL+'/documents/all/'+ this.state.user._id)
     .then((response) => {
       return response.json()
     })
     .then((resp) => {
-      console.log("pulled resp", resp);
+    //   console.log("pulled resp", resp);
       if (resp.documents.length > 0){
         this.setState({documents: resp.documents})
       }
