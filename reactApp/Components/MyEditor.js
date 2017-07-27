@@ -21,8 +21,8 @@ import MenuItem from 'material-ui/MenuItem';
 
 
 import io from 'socket.io-client'
-const socket = io.connect("http://localhost:3000");
-const baseURL = 'http://localhost:3000'
+const socket = io.connect('http://be747dfd.ngrok.io')//"http://localhost:3000");
+const baseURL = 'http://be747dfd.ngrok.io'//'http://localhost:3000'
 
 const styleMap = {
   'BOLD': {
@@ -132,8 +132,9 @@ class MyEditor extends React.Component {
         var end = selectionState.getEndOffset();
         var selectedText = currentContentBlock.getText().slice(start, end);
 
-        console.log("onChange", currentContent.getPlainText());
-        console.log(start, end, selectedText);
+        // console.log("onChange", currentContent.getPlainText());
+        // console.log(start, end, selectedText);
+        // console.log('about to emit cursor event in o');
         socket.emit('cursor', {
           room: this.state.room,
           start: start,
@@ -142,9 +143,11 @@ class MyEditor extends React.Component {
           currentContent: JSON.stringify(convertToRaw(editorState.getCurrentContent()))
         });
 
+
     }
 
     componentDidMount() {
+        //TODO: DOES THIS KICK PEOPLE OUT OF DOC WHEN A USER LOGS OUT
       socket.on('redirect', () => {
         alert("Full");
         this.props.history.push('/directory');
@@ -369,6 +372,12 @@ class MyEditor extends React.Component {
     }
 
     render() {
+        // socket.on('update', (data) => {
+        // //   console.log("Update");
+        //   const updatedState = convertFromRaw(JSON.parse(data.currentContent));
+        //   this.setState({editorState: EditorState.createWithContent(updatedState)});
+        //
+        // });
         const actions = [
             <FlatButton label="Cancel" primary={true} onTouchTap={this.onAlertClose.bind(this)}/>,
               <FlatButton label="Go back anyway" primary={true} onTouchTap={this.onAlertOk.bind(this)}/>]

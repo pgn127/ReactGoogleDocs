@@ -91,7 +91,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('room', (data) => {
-    console.log(data, 'joined');
+    console.log('joined room on room socket listener');
     socket.join(data);
     console.log(io.nsps['/'].adapter.rooms[data].length);
     if(io.nsps['/'].adapter.rooms[data].length >= 6){
@@ -100,7 +100,8 @@ io.on('connection', (socket) => {
   });
 
   socket.on('cursor', (data) => {
-    console.log(data);
+    // console.log(data);
+    console.log('about to broadcast update event');
     socket.broadcast.to(data.room).emit('update', data);
   });
 
