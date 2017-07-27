@@ -156,7 +156,7 @@ class MyEditor extends React.Component {
     })
 
     this.socket.on('receiveNewCursor', incomingSelectionObj => {
-        // console.log('user has reeived cursor move');
+        // console.log('in receive new cursor');
         let editorState = this.state.editorState;
         const originalEditorState = editorState;
         const originalSelection = this.state.editorState.getSelection();
@@ -164,23 +164,26 @@ class MyEditor extends React.Component {
 
         //take the original selection stateand change all its values to be the selectionstateobj  that we just received
         const incomingSelectionState = originalSelection.merge(incomingSelectionObj)
-
+        // console.log('incomign selection state is ', incomingSelectionObj, incomingSelectionState.getStartOffset(), incomingSelectionState.getEndOffset());
         const temporaryEditorState = EditorState.forceSelection(originalEditorState, incomingSelectionState)
 
         if(temporaryEditorState) {
+            // console.log('received cursor move');
             // console.log('temporaryEditorState nto undefined ', temporaryEditorState);
             this.setState({editorState: temporaryEditorState}, function() {
                 //were now referring to browser selectionstateobjc
                 const windowSelection = window.getSelection();
+                console.log('window selection was ', windowSelection);
                 if(windowSelection.rangeCount>0){
 
-                    // console.log('window selection shoudlnt be unfeined in rangecount', windowSelection);
-                    const range = windowSelection.getRangeAt(0); //cursor wil always be a single range so u can just ge tthe first range in the array
-
-                    const rects = range.getClientRects()[0];
-
-                    const {top, left, bottom} = rects;
-                    this.setState({editorState: originalEditorState, top, left, height: bottom - top})
+                    const range = windowSelection.getRangeAt(0);
+                    const clientRects = range.getClientRects()
+                    console.log('client rects length ', clientRects);
+                    if(clientRects.length > 0) {
+                        const rects = clientRects[0];//cursor wil always be a single range so u can just ge tthe first range in the array
+                        const {top, left, bottom} = rects;
+                        this.setState({editorState: originalEditorState, top, left, height: bottom - top})
+                    }
                 }
             })
         } else {
@@ -234,12 +237,17 @@ class MyEditor extends React.Component {
       editorState = RichUtils.toggleInlineStyle(editorState, 'RED');
       this.previousHighlight = editorState.getSelection(); //set previous heighlight  to be newest selection, if theres no new highlight this seems to not even  happen
 
+
+    //   console.log('selection is ', selection, selection.getStartOffset(), selection.getEndOffset());
       //DETECTING CURSOR VERSUS HIGHLIGHT: if your cursor is only in one spot and not highlighting anything then this is not a highlight
       if(selection.getStartOffset() === selection.getEndOffset()){
         //only emit a cursor event if it took place in the editor (dont emit an event where user has clicked somewhere out of the screen)
             if(selection._map._root.entries[5][1]){
+                // console.log('emitting cursor moving', selection);
                 this.socket.emit('cursorMove', selection)
             }
+      } else {
+          console.log('it was a hgihlight');
       }
 
       // this.setState({editorState: editorState, saved: false})
@@ -456,7 +464,6 @@ componentDidMount(){
   }
 
 
-
   onSave(){
     var newContent = JSON.stringify(convertToRaw(this.state.editorState.getCurrentContent()));
     // console.log('content that is being saved is ', newContent);
@@ -603,7 +610,7 @@ componentDidMount(){
                 open={this.state.alertOpen}
             >You have unsaved changes! Click save to prevent your changes from being lost!</Dialog>
 
-
+            {/* <div>{'user is '+this.props.store.get('user').name}</div> */}
             <div className="docContainer">
                 {/*  <div className='documentControls'>
                 <div style={{display:'flex', flexDirection: 'row'}} > */}
