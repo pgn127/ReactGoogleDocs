@@ -119,7 +119,7 @@ socket.on('newContent', stringifiedContent => {
 
 socket.on('cursorMove', selection => {
     // console.log('selection',selection);
-    console.log('received cursormove');
+    // console.log('received cursormove');
     socket.broadcast.to(socket.documentRoom).emit('receiveNewCursor', selection)
 })
 

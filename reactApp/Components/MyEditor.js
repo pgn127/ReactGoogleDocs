@@ -24,7 +24,9 @@ var Mousetrap = require('mousetrap');
 
 import io from 'socket.io-client'
 
+
 const baseURL = "http://localhost:3000/" //'http://be747dfd.ngrok.io/
+
 
 const styleMap = {
   'BOLD': {
@@ -207,7 +209,7 @@ class MyEditor extends React.Component {
     this.previousHighlight = null; //means you dont have a selection/highlight but can still ahv ea cursor
 
     //doing socket stuff over the constructur but can also do componentdid mount.... but constructor hapepsn before the didmount
-    this.socket = io.connect('http://be747dfd.ngrok.io')//"http://localhost:3000")//)//
+    this.socket = io.connect('http://localhost:3000')//"http://localhost:3000")//)//http://be747dfd.ngrok.io
 
 //listen for a response from server to confirm your entry to this room
     this.socket.on('welcome', ({doc})=> {
@@ -232,7 +234,7 @@ class MyEditor extends React.Component {
     })
 
     this.socket.on('receiveNewCursor', incomingSelectionObj => {
-        console.log('reeived cursor move');
+        // console.log('user has reeived cursor move');
         let editorState = this.state.editorState;
         const originalEditorState = editorState;
         const originalSelection = editorState.getSelection();
@@ -243,15 +245,26 @@ class MyEditor extends React.Component {
 
         const temporaryEditorState = EditorState.forceSelection(originalEditorState, incomingSelectionState)
 
-        this.setState({editorState: temporaryEditorState}, function() {
-            //were now referring to browser selectionstateobjc
-            const windowSelection = window.getSelection();
-            const range = windowSelection.getRangeAt(0); //cursor wil always be a single range so u can just ge tthe first range in the array
-            const rects = range.getClientRects()[0];
-            console.log(rects);
-            const {top, left, bottom} = rects;
-            this.setState({editorState: originalEditorState, top, left, height: bottom - top})
-        })
+        if(temporaryEditorState) {
+            // console.log('temporaryEditorState nto undefined ', temporaryEditorState);
+            this.setState({editorState: temporaryEditorState}, function() {
+                //were now referring to browser selectionstateobjc
+                const windowSelection = window.getSelection();
+                if(windowSelection.rangeCount>0){
+                  console.log('recievedcursor');
+                    // console.log('window selection shoudlnt be unfeined in rangecount', windowSelection);
+                    const range = windowSelection.getRangeAt(0); //cursor wil always be a single range so u can just ge tthe first range in the array
+
+                    const rects = range.getClientRects()[0];
+
+                    const {top, left, bottom} = rects;
+                    this.setState({editorState: originalEditorState, top, left, height: bottom - top})
+                }
+            })
+        } else {
+            console.log('temportaray state undefined wtf');
+        }
+
     })
 
     //emit a joined message to everyone else also in the same document, send the document id of what u are trying to join
@@ -303,7 +316,7 @@ class MyEditor extends React.Component {
   // }
   onChange(editorState) {
       this.setState({editorState: editorState, saved: false})
-      console.log("changing");
+
       //save current selection
       const selection = editorState.getSelection() //refers to most up to date selection and save it
       //if i have a previous highlight,
@@ -319,20 +332,24 @@ class MyEditor extends React.Component {
 
       }
       //apply and remove instead of togle to fix the glitch???
-      console.log("BEFORE", this.previousHighlight);
       editorState = RichUtils.toggleInlineStyle(editorState, 'RED');
       this.previousHighlight = editorState.getSelection(); //set previous heighlight  to be newest selection, if theres no new highlight this seems to not even  happen
-      console.log("AFTER", this.previousHighlight);
+
       //DETECTING CURSOR VERSUS HIGHLIGHT: if your cursor is only in one spot and not highlighting anything then this is not a highlight
-      var currentContent = convertToRaw(editorState.getCurrentContent()); //returns content state out of the editor state
-      this.socket.emit('newContent', JSON.stringify(currentContent)); //emit a newcontent event
+
+
+      //DETECTING CURSOR VERSUS HIGHLIGHT: if your cursor is only in one spot and not highlighting anything then this is not a highlight
       if(selection.getStartOffset() === selection.getEndOffset()){
-          console.log('this was a cursor event');
-          this.socket.emit('cursorMove', selection)
+        //only emit a cursor event if it took place in the editor (dont emit an event where user has clicked somewhere out of the screen)
+            if(selection._map._root.entries[5][1]){
+                this.socket.emit('cursorMove', selection)
+            }
       }
 
       // this.setState({editorState: editorState, saved: false})
 
+      var currentContent = convertToRaw(editorState.getCurrentContent()); //returns content state out of the editor state
+      this.socket.emit('newContent', JSON.stringify(currentContent)); //emit a newcontent event
 
 
 
@@ -773,21 +790,22 @@ class MyEditor extends React.Component {
                           <BlockStyles
                             editorState={this.state.editorState}
                             onToggle={this._toggleBlockType.bind(this)}
-                          />
-                        </div>
-                      </div>
-                      <div className="editor">
-                        <Editor
-                          customStyleMap={this.state.styleMap}
-                          editorState={this.state.editorState}
-                          onChange={this.onChange.bind(this)}
-                          onTab={this._onTab.bind(this)}
-                          blockRenderMap={extendedBlockRenderMap}
-                          blockStyleFn={this.myBlockStyleFn}
-                        />
-                      </div>
+              />
                     </div>
-                  </div>
+                </div>
+                <div className="editor">
+                    {this.state.top ? (<div style={{position: 'absolute', backgroundColor: 'red', width: '2px', height: this.state.height, top: this.state.top, left: this.state.left}}></div>) : undefined}
+                    <Editor
+                        customStyleMap={this.state.styleMap}
+                        editorState={this.state.editorState}
+                        onChange={this.onChange.bind(this)}
+                        onTab={this._onTab.bind(this)}
+                        blockRenderMap={extendedBlockRenderMap}
+                        blockStyleFn={this.myBlockStyleFn}
+                    />
+                </div>
+            </div>
+        </div>
                 );
               }
             }
