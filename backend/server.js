@@ -130,9 +130,15 @@ socket.on('newContent', stringifiedContent => {
 
 socket.on('cursorMove', selection => {
     // console.log('selection',selection);
-    console.log('received cursormove');
+    // console.log('received cursormove');
     socket.broadcast.to(socket.documentRoom).emit('receiveNewCursor', selection)
 })
+
+// socket.on('testsend', (data) => {
+//     // console.log('selection',selection);
+//     // console.log('received cursormove');
+//     socket.broadcast.to(socket.documentRoom).emit('testrecieve', data)
+// })
 
 //CODEALONG
 //this will get called when disconnect is dispatched, do cleanup here

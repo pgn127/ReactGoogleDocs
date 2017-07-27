@@ -171,42 +171,38 @@ class MyEditor extends React.Component {
 
     })
 
-    this.socket.on('receiveNewCursor', incomingSelectionObj => {
-      console.log('reeived cursor move');
-      let editorState = this.state.editorState;
-      const originalEditorState = editorState;
-      const originalSelection = this.state.editorState.getSelection();
-      //move my cursor to be incoming selection ObjectId
+    this.socket.on('receiveNewCursor', (data) => {
+        // console.log('in receive of cursor mvoemnt');
+        const incomingSelectionObj = data.incomingSelectionObj
+        const loc = data.loc
+        let editorState = this.state.editorState;
+        const originalEditorState = editorState;
+        const originalSelection = this.state.editorState.getSelection();
+        //move my cursor to be incoming selection ObjectId
 
-      //take the original selection stateand change all its values to be the selectionstateobj  that we just received
-      const incomingSelectionState = originalSelection.merge(incomingSelectionObj)
+        //take the original selection stateand change all its values to be the selectionstateobj  that we just received
+        const incomingSelectionState = originalSelection.merge(incomingSelectionObj)
+        // console.log('incomign selection state is ', incomingSelectionObj, incomingSelectionState.getStartOffset(), incomingSelectionState.getEndOffset());
+        const temporaryEditorState = EditorState.forceSelection(originalEditorState, incomingSelectionState)
 
-      const temporaryEditorState = EditorState.forceSelection(originalEditorState, incomingSelectionObj)
+        if(temporaryEditorState) {
+            this.setState({editorState: temporaryEditorState}, function() {
+                //were now referring to browser selectionstateobjc
+                if(loc && loc.top && loc.bottom && loc.left) {
+                    // console.log('location received was not null, about to move other users curosr', loc);
+                    this.setState({editorState: originalEditorState, top: loc.top, left: loc.left, height: loc.bottom - loc.top})
+                }
 
-      this.setState({editorState: temporaryEditorState}, function() {
-        //were now referring to browser selectionstateobjc
-        const windowSelection = window.getSelection();
-        const range = windowSelection.getRangeAt(0); //cursor wil always be a single range so u can just ge tthe first range in the array
-        const rects = range.getClientRects()[0];
-        const {top, left, bottom} = rects;
-        this.setState({editorState: originalEditorState, top, left, height: bottom - top})
-      })
+            })
+        } else {
+            console.log('temportaray state undefined wtf');
+        }
     })
+
 
     //emit a joined message to everyone else also in the same document, send the document id of what u are trying to join
     this.socket.emit('joined', {doc: this.props.match.params.docId, user: this.props.store.get('user')});
 
-
-
-
-    // //what if there is a 10 second pause between the emit and this handler being set up: you could miss a server response,
-    // //solutions: move the emits below the "on handler" oR
-    // //2. do a "handshake"
-    //
-    //     //listne for a server event back
-    //     this.socket.on('helloback', ({name}) => {
-    //         console.log('hello back', name);
-    //     })
 
   }
 
@@ -218,56 +214,68 @@ class MyEditor extends React.Component {
     })
   }
   onChange(editorState) {
-    this.setState({editorState: editorState, saved: false})
-    //save current selection
-    const selection = editorState.getSelection() //refers to most up to date selection and save it
+    //   console.log('on change editorstate ', editorState);
+      this.setState({editorState: editorState, saved: false})
+      //save current selection
+      const selection = editorState.getSelection() //refers to most up to date selection and save it
 
-    //if i have a previous highlight,
-    if(this.previousHighlight){ //if i have an old selection, then  change editorstate to be the result of
+      //if i have a previous highlight,
+      if(this.previousHighlight){ //if i have an old selection, then  change editorstate to be the result of
+          //accept selection changes the editorstate to have the previous highlight selection- turn off where the old highlight was,
+          editorState = EditorState.acceptSelection(editorState, this.previousHighlight)
+          //switch to old editorstate
+          editorState = RichUtils.toggleInlineStyle(editorState, 'RED'); //turn off style on the old selection since we had turned this on previously
 
-      //accept selection changes the editorstate to have the previous highlight selection- turn off where the old highlight was,
-      editorState = EditorState.acceptSelection(editorState, this.previousHighlight)
-      //switch to old editorstate
-      editorState = RichUtils.toggleInlineStyle(editorState, 'RED'); //turn off style on the old selection since we had turned this on previously
+          editorState = EditorState.acceptSelection(editorState, selection)
+          //switch back to new selection by applying 'selection' (that we previously saved before overwirting ) to the editorState
 
-      editorState = EditorState.acceptSelection(editorState, selection)
-      //switch back to new selection by applying 'selection' (that we previously saved before overwirting ) to the editorState
+      }
+      //apply and remove instead of togle to fix the glitch???
 
-    }
-    //apply and remove instead of togle to fix the glitch???
-
-    editorState = RichUtils.toggleInlineStyle(editorState, 'RED');
-    this.previousHighlight = editorState.getSelection(); //set previous heighlight  to be newest selection, if theres no new highlight this seems to not even  happen
-
-    //DETECTING CURSOR VERSUS HIGHLIGHT: if your cursor is only in one spot and not highlighting anything then this is not a highlight
-    if(selection.getStartOffset() === selection.getEndOffset()){
-      console.log('this was a cursor event');
-      this.socket.emit('cursorMove', selection)
-    }
-
-    // this.setState({editorState: editorState, saved: false})
-
-    var currentContent = convertToRaw(editorState.getCurrentContent()); //returns content state out of the editor state
-    this.socket.emit('newContent', JSON.stringify(currentContent)); //emit a newcontent event
+      editorState = RichUtils.toggleInlineStyle(editorState, 'RED');
+      this.previousHighlight = editorState.getSelection(); //set previous heighlight  to be newest selection, if theres no new highlight this seems to not even  happen
 
 
+      //DETECTING CURSOR VERSUS HIGHLIGHT: if your cursor is only in one spot and not highlighting anything then this is not a highlight
+      if(selection.getStartOffset() === selection.getEndOffset()){
 
-    // var selectionState = editorState.getSelection();
-    // var anchorKey = selectionState.getAnchorKey();
-    // // var currentContentBlock = currentContent.getBlockForKey(anchorKey);
-    // var start = selectionState.getStartOffset();
-    // var end = selectionState.getEndOffset();
-    // var selectedText = currentContentBlock.getText().slice(start, end);
+        //only emit a cursor event if it took place in the editor (dont emit an event where user has clicked somewhere out of the screen)
+            if(selection._map._root.entries[5][1]){
+                // console.log('this was a cursor movement', selection.getAnchorOffset(), selection._map._root.entries,window.getSelection());
+                if(window.getSelection().focusNode){
+                    console.log('focus node ', window.getSelection().focusNode.offsetTop);
+                }
 
-    // console.log("onChange", currentContent.getPlainText());
-    // console.log(start, end, selectedText);
-    // socket.emit('cursor', {
-    //   room: this.state.room,
-    //   start: start,
-    //   end: end,
-    //   selectedText: selectedText,
-    //   currentContent: currentContent
-    // });
+
+                const windowSelection = window.getSelection();
+                if(windowSelection.rangeCount>0){
+                    // console.log('window selection rangecount >0');
+                    const range = windowSelection.getRangeAt(0);
+                    const clientRects = range.getClientRects()
+                    // console.log('CLIENT RECTS ', clientRects);
+                    if(clientRects.length > 0) {
+                        // console.log('client rects >0');
+                        const rects = clientRects[0];//cursor wil always be a single range so u can just ge tthe first range in the array
+                        const {top, left, bottom} = rects;
+                        const loc = {top: rects.top, bottom: rects.bottom, left: rects.left}
+                        const data = {incomingSelectionObj: selection, loc: loc}
+                        // console.log('about to emit cursor movement ');
+                        this.socket.emit('cursorMove', data)
+                        //
+                        // this.setState({editorState: originalEditorState, top, left, height: bottom - top})
+                    }
+                    // this.socket.emit('cursorMove', selection)
+                }
+            }
+      } else {
+          console.log('it was a hgihlight');
+      }
+
+      // this.setState({editorState: editorState, saved: false})
+
+      var currentContent = convertToRaw(editorState.getCurrentContent()); //returns content state out of the editor state
+      this.socket.emit('newContent', JSON.stringify(currentContent)); //emit a newcontent event
+
   }
 
   //to ensure something happens righ when component is about to get killed
@@ -479,7 +487,6 @@ class MyEditor extends React.Component {
   }
 
 
-
   onSave(){
     var newContent = JSON.stringify(convertToRaw(this.state.editorState.getCurrentContent()));
     // console.log('content that is being saved is ', newContent);
@@ -626,7 +633,7 @@ class MyEditor extends React.Component {
             open={this.state.alertOpen}
             >You have unsaved changes! Click save to prevent your changes from being lost!</Dialog>
 
-
+            {/* <div>{'user is '+this.props.store.get('user').name}</div> */}
             <div className="docContainer">
               {/*  <div className='documentControls'>
               <div style={{display:'flex', flexDirection: 'row'}} > */}
