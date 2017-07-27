@@ -16,7 +16,7 @@ import Dialog from 'material-ui/Dialog';
 import FlatButton from 'material-ui/FlatButton';
 import TextField from 'material-ui/TextField';
 
-const baseURL = 'http://localhost:3000'
+const baseURL = 'http://be747dfd.ngrok.io/'
 class Directory extends React.Component {
   constructor(props){
     super(props);
@@ -49,7 +49,7 @@ class Directory extends React.Component {
       this.ownedByAll()
   }
   logout(){
-    fetch(baseURL+'/logout')
+    fetch(baseURL+'logout')
     .then((response) => {
       return response.json()
     })
@@ -105,7 +105,7 @@ class Directory extends React.Component {
 
   ownedByAll(){
     console.log(this.state.user._id);
-    fetch(baseURL+'/documents/all/'+ this.state.user._id)
+    fetch(baseURL+'documents/all/'+ this.state.user._id)
     .then((response) => {
       return response.json()
     })

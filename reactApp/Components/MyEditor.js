@@ -23,8 +23,8 @@ var Mousetrap = require('mousetrap');
 
 
 import io from 'socket.io-client'
-const socket = io.connect("http://localhost:3000");
-const baseURL = 'http://localhost:3000'
+const socket = io.connect("http://be747dfd.ngrok.io/");
+const baseURL = 'http://be747dfd.ngrok.io/'
 
 const styleMap = {
   'BOLD': {
@@ -160,14 +160,9 @@ class MyEditor extends React.Component {
       alert("Full");
       this.props.history.push('/directory');
     });
-    socket.on('update', (data) => {
-      console.log("Update");
-      const updatedState = convertFromRaw(JSON.parse(data.currentContent));
-      this.setState({editorState: EditorState.createWithContent(updatedState)});
 
-    });
     console.log(this.props.match.params.docId);
-    fetch('http://localhost:3000/documents/'+this.props.match.params.docId)
+    fetch(baseURL+'documents/'+this.props.match.params.docId)
     .then((response) => {
 
       return response.json()
@@ -346,7 +341,7 @@ class MyEditor extends React.Component {
     var newContent = JSON.stringify(convertToRaw(this.state.editorState.getCurrentContent()));
     // console.log('content that is being saved is ', newContent);
     var newTitle = this.state.title;
-    fetch('http://localhost:3000/documents/save/'+this.props.match.params.docId, {
+    fetch(baseURL+'documents/save/'+this.props.match.params.docId, {
       method: 'POST',
       headers: {
         "Content-Type": "application/json"
@@ -382,7 +377,7 @@ class MyEditor extends React.Component {
   onCollabSubmit() {
     console.log("DOCID", this.props.match.params.docId);
     console.log("NEWCOLLAB", this.state.newCollaborators);
-    fetch('http://localhost:3000/documents/add/collaborator/'+this.props.match.params.docId, {
+    fetch(baseURL+'documents/add/collaborator/'+this.props.match.params.docId, {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -443,6 +438,11 @@ class MyEditor extends React.Component {
           <Redirect to='/directory' />
         )
       }
+      socket.on('update', (data) => {
+        const updatedState = convertFromRaw(JSON.parse(data.currentContent));
+        this.setState({editorState: EditorState.createWithContent(updatedState)});
+
+      });
       return (
 
         <div >
