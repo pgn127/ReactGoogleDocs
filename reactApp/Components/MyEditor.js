@@ -494,6 +494,7 @@ componentDidMount(){
 
           })
       })
+
       .then((response) => {
           return response.json()
       })
@@ -508,28 +509,31 @@ componentDidMount(){
           console.log('error in add collabs', err)
           this.setState({collabModalOpen: false});
           alert(`error adding collaborators ${this.state.newCollaborators}`)
+
       })
   }
 
   onCollabClose() {
-    this.setState({collabModalOpen: false});
+      this.setState({collabModalOpen: false});
   }
 
   onCollabOpen() {
-    this.setState({collabModalOpen: true});
+      this.setState({collabModalOpen: true});
   }
   onTitleEdit(event) {
-    this.setState({saved: false, title: event.target.value})
+      this.setState({saved: false, title: event.target.value})
   }
   //called when user clicks ok and decides to not save changes
   onAlertOk() {
-    this.setState({alertOpen: false, goBack: true});
+      this.setState({alertOpen: false, goBack: true});
   }
 
   //called when user clicks cancel on alert
   onAlertClose() {
-    this.setState({alertOpen: false});
+      this.setState({alertOpen: false});
   }
+
+
 
 
   render() {
