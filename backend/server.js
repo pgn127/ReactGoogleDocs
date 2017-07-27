@@ -14,9 +14,9 @@ const models = require('./models/models.js')
 const app = express()
 const server = require('http').createServer(app); //make a http server to use for the sockets
 const io = require('socket.io')(server);
+const _ = require('underscore');
 //can add event handlers to this
-
-
+var online = [];
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -99,14 +99,25 @@ io.on('connection', (socket) => {
 
 //CODEALONG
   //listen for joined events when users enter
-  socket.on('joined', ({doc}) => {
+  socket.on('joined', ({doc, user}) => {
+
+      socket.join(doc) //give join the string name of the room, this joins that room
+      console.log(io.nsps['/'].adapter.rooms[doc].length);
+      if(io.nsps['/'].adapter.rooms[doc].length >= 6) {
+        socket.emit('redirect');
+        return;
+      }
+
       console.log('user has joined a room', doc);
       socket.emit('welcome', {doc}) //emit back to the sending user
-      socket.join(doc) //give join the string name of the room, this joins that room
       socket.documentRoom = doc; //create a new key on the socket object with information you want to be accessible in all the handlers
 
+      online.push(user);
+      online = _.uniq(online, '_id'); 
+
+      io.to(doc).emit('onlineUpdated', {online});
       //broadcast a userjoined event to everyone but sender that is in the room named doc
-      socket.broadcast.to(doc).emit('userjoined')
+      socket.broadcast.to(doc).emit('userjoined');
 
   })
 
@@ -126,9 +137,21 @@ socket.on('cursorMove', selection => {
 //CODEALONG
 //this will get called when disconnect is dispatched, do cleanup here
 //when people leave the pagethis is where you are notified
-  socket.on('disconnect', () => {
-    console.log('user disconnected');
+  socket.on('disconnect', ({userleft}) => {
+    if(!userleft) {
+      return;
+    }
+    console.log('user disconnecteddddd');
+    var index = 0;
+    for(var i = 0; i < online.length; i++) {
+      if(online[i] === userleft._id) {
+        index = i;
+        break;
+      }
+    }
+    online.splice(index, 1);
     socket.leave(socket.documentRoom) //leave the room, get the doc from the key we stored on the socket
+    io.to(doc).emit('onlineUpdated', {online});
     socket.broadcast.to(socket.documentRoom).emit('userleft') //emit to all other users in room that user has left
   });
 

@@ -17,7 +17,8 @@ import TextField from 'material-ui/TextField';
 import FlatButton from 'material-ui/FlatButton';
 import RaisedButton from 'material-ui/RaisedButton';
 
-const baseURL = 'http://be747dfd.ngrok.io'//'http://localhost:3000';
+// const baseURL = 'http://be747dfd.ngrok.io'
+const baseURL = 'http://localhost:3000';
 const style = {
   margin: 12,
 };
@@ -33,7 +34,7 @@ export default class Login extends React.Component {
 
   componentDidMount(){
     var storedUser = this.props.store.get('user')
-    console.log(this.props.store.get('user'));
+    console.log("loginMount", this.props.store.get('user'));
     //TODO: make sure that this stored user is actually valid in mongodb
     if (storedUser && storedUser._id){
       console.log('Logging in');
@@ -76,6 +77,8 @@ export default class Login extends React.Component {
   }
   render() {
     if (this.state.loggedin){
+
+      console.log("BBBB1", this.props.store.get('user'));
       return(<Redirect to='/directory' />)
     }
     console.log(this.state);

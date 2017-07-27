@@ -24,8 +24,8 @@ var Mousetrap = require('mousetrap');
 
 import io from 'socket.io-client'
 
-const baseURL = 'http://be747dfd.ngrok.io'//'http://localhost:3000'
-
+// const baseURL = 'http://be747dfd.ngrok.io'
+const baseURL = 'http://localhost:3000'
 
 const styleMap = {
   'BOLD': {
@@ -70,6 +70,8 @@ const blockRenderMap = Map({
   }
 });
 
+const colors = ['red', 'orange', 'yellow', 'green', 'blue', 'violet']
+
 // Include 'paragraph' as a valid block and updated the unstyled element but
 // keep support for other draft default block types
 const extendedBlockRenderMap = DefaultDraftBlockRenderMap.merge(blockRenderMap);
@@ -88,6 +90,7 @@ class MyEditor extends React.Component {
       autosave: false,
       collabModalOpen: false,
       newCollaborators: [],
+      online: [],
       newCollaborator: '',
       styleMap: {
         'BOLD': {
@@ -131,20 +134,33 @@ class MyEditor extends React.Component {
     this.previousHighlight = null; //means you dont have a selection/highlight but can still ahv ea cursor
 
     //doing socket stuff over the constructur but can also do componentdid mount.... but constructor hapepsn before the didmount
-    this.socket = io.connect('http://be747dfd.ngrok.io')//"http://localhost:3000")//)//
+    // this.socket = io.connect('http://be747dfd.ngrok.io')
+    this.socket = io.connect('http://localhost:3000');
 
     //listen for a response from server to confirm your entry to this room
-    this.socket.on('welcome', ({doc})=> {
-      console.log('you have just joined the room ', doc);
+    this.socket.on('welcome', ({doc}) => {
+      console.log("User");
+
     })
     //listen for userjoined events for this room/documents
-    this.socket.on('userjoined', () => {
-      console.log('use rhas joined the room');
+    this.socket.on('userjoined', ({online}) => {
+      console.log('user has joined the room');
+
     })
 
-    this.socket.on('userleft', () => {
+    this.socket.on('onlineUpdated', ({online}) => {
+      console.log('onlineUpdated', online);
+      this.setState({online: online});
+    })
+
+    this.socket.on('userleft', (data) => {
       console.log('user has left');
     })
+
+    this.socket.on('redirect', () => {
+        alert("Full");
+        this.props.history.push('/directory');
+    });
 
     //listen for new content and update content state
     this.socket.on('receivedNewContent', stringifiedContent => {
@@ -178,7 +194,8 @@ class MyEditor extends React.Component {
     })
 
     //emit a joined message to everyone else also in the same document, send the document id of what u are trying to join
-    this.socket.emit('joined', {doc: this.props.match.params.docId})
+    this.socket.emit('joined', {doc: this.props.match.params.docId, user: this.props.store.get('user')});
+
 
 
 
@@ -223,7 +240,7 @@ class MyEditor extends React.Component {
     this.previousHighlight = editorState.getSelection(); //set previous heighlight  to be newest selection, if theres no new highlight this seems to not even  happen
 
     //DETECTING CURSOR VERSUS HIGHLIGHT: if your cursor is only in one spot and not highlighting anything then this is not a highlight
-    if(selection.getStartOffset === selection.getEndOffset()){
+    if(selection.getStartOffset() === selection.getEndOffset()){
       console.log('this was a cursor event');
       this.socket.emit('cursorMove', selection)
     }
@@ -254,8 +271,28 @@ class MyEditor extends React.Component {
   }
 
   //to ensure something happens righ when component is about to get killed
-  componentWillUnmount(){
-    this.socket.disconnect(); //dont pass anythign the socket will disconnect its self and senda  disconnect event to the server
+  componentWillUnmount() {
+
+    this.socket.emit('disconnect', {userLeft: this.props.store.get('user')});
+    this.socket.disconnect();
+
+    // console.log(1);
+    // var newOnline2 = this.state.online.slice();
+    // var index = 0;
+    // for(var i = 0; i < newOnline2.length; i++) {
+    //   if(newOnline2[i]._id === this.props.store.get('user')._id) {
+    //       index = i;
+    //   }
+    // }
+    // console.log(1, this.state.online);
+    // newOnline2.splice(index, 1);
+    // console.log(1, newOnline2);
+    // this.setState({online: newOnline2}, () => {
+    //   console.log("Left", this.state.online);
+    //   this.socket.emit('disconnect');
+    //   this.socket.disconnect();
+    // });
+
 
   }
   componentDidMount(){
@@ -435,7 +472,7 @@ class MyEditor extends React.Component {
       'FONT-COLOR-' + hex
     ));
   }
-  
+
   _onTab(e) {
     const maxDepth = 8;
     this.onChange(RichUtils.onTab(e, this.state.editorState, maxDepth));
@@ -596,11 +633,29 @@ class MyEditor extends React.Component {
               <Toolbar>
                 <ToolbarGroup firstChild={true}>
                   <span style={{display: 'flex', alignSelf: 'center', flexDirection:'row'}}>Shared with:</span>
-                  <List style={{paddingLeft: '15px', paddingRight: '10px'}}>
+                  {/* <List style={{paddingLeft: '15px', paddingRight: '10px'}}>
                     {this.state.collaborators.map((user, i) => (
                       <span key={i} className="collaboratorIcon" style={{backgroundColor: randomColor()}}>{'F'}</span>
 
                     ))}
+
+                  </List> */}
+                  <List style={{paddingLeft: '15px', paddingRight: '10px'}}>
+                    {this.state.online.map((user, i) => {
+                      var color = colors[i];
+                      return(
+                        <span onMouseOver={() => {
+                          alert(user.name);
+                        }}
+                        key={i}
+                        className="collaboratorIcon"
+                        style={{backgroundColor: color}}>
+                          {user.name[0]}
+                        </span>
+                      )
+
+
+                    })}
 
                   </List>
                 </ToolbarGroup>
