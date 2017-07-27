@@ -13,9 +13,15 @@ import Dialog from 'material-ui/Dialog';
 import FontIcon from 'material-ui/FontIcon';
 import AppBar from 'material-ui/AppBar';
 import TextField from 'material-ui/TextField';
-import {Editor, EditorState, RichUtils, ContentState, DefaultDraftBlockRenderMap, convertFromRaw, convertToRaw} from 'draft-js';
+import {Editor, EditorState, RichUtils, ContentState, DefaultDraftBlockRenderMap, convertFromRaw, convertToRaw, Modifier} from 'draft-js';
 import { Map } from 'immutable';
+import Popover, {PopoverAnimationVertical} from 'material-ui/Popover';
+import Menu from 'material-ui/Menu';
+import MenuItem from 'material-ui/MenuItem';
 
+
+import io from 'socket.io-client'
+const socket = io.connect("http://localhost:3000");
 
 const styleMap = {
   'BOLD': {
@@ -71,6 +77,7 @@ class MyEditor extends React.Component {
             collaborators: [],
             currentDocument:  {},
             goBack: false,
+            isFileOpen: false,
             currentUser: {
                 _id: '597797018cccf651b76f25ac',
                 name: 'Frankie',
@@ -105,7 +112,8 @@ class MyEditor extends React.Component {
               'TEXT-ALIGN-RIGHT': {
                   'textAlign': 'right'
               }
-            }
+            },
+            room: ""
         };
         //doc id is this.props.match.params.docId
         // this.onChange = (editorState) => this.setState({editorState});
@@ -114,13 +122,39 @@ class MyEditor extends React.Component {
 
     onChange(editorState) {
         this.setState({editorState: editorState, saved: false})
+
+        var selectionState = editorState.getSelection();
+        var anchorKey = selectionState.getAnchorKey();
+        var currentContent = editorState.getCurrentContent();
+        var currentContentBlock = currentContent.getBlockForKey(anchorKey);
+        var start = selectionState.getStartOffset();
+        var end = selectionState.getEndOffset();
+        var selectedText = currentContentBlock.getText().slice(start, end);
+
+        console.log("onChange", currentContent.getPlainText());
+        console.log(start, end, selectedText);
+        socket.emit('cursor', {
+          room: this.state.room,
+          start: start,
+          end: end,
+          selectedText: selectedText,
+          currentContent: JSON.stringify(convertToRaw(editorState.getCurrentContent()))
+        });
+
     }
 
     componentDidMount() {
+      socket.on('redirect', () => {
+        alert("Full");
+        this.props.history.push('/directory');
+      });
+      socket.on('update', (data) => {
+        console.log("Update");
+        const updatedState = convertFromRaw(JSON.parse(data.currentContent));
+        this.setState({editorState: EditorState.createWithContent(updatedState)});
 
-      // console.log(this.props);
-      // console.log(this.props.match);
-      // console.log(this.props.match.params.docId);
+      });
+      console.log(this.props.match.params.docId);
         fetch('http://localhost:3000/documents/'+this.props.match.params.docId)
         .then((response) => {
 
@@ -131,18 +165,23 @@ class MyEditor extends React.Component {
             //if this document has no content dont overwrite empty editorState in the state
             if(resp.document.content === ""){
               console.log('document content was empty ');
-              this.setState({saved: false, currentDocument: resp.document, collaborators: resp.document.collaborators, title: resp.document.title})
+              this.setState({saved: false, currentDocument: resp.document, collaborators: resp.document.collaborators, title: resp.document.title});
+
             } else {
               console.log('document has an existing state');
               const contentState = convertFromRaw( JSON.parse(resp.document.content) ) ;
               var currentDocument = Object.assign({}, resp.document, {content: contentState})
               this.setState({saved: false, currentDocument: currentDocument, collaborators: currentDocument.collaborators, title: currentDocument.title, editorState: EditorState.createWithContent(contentState) })
 
+              socket.emit('room', currentDocument.title);
+              this.setState({room: currentDocument.title});
+
             }
             // console.log('document collaborators ', currentDocument.collaborators);
             // this.setState({currentDocument: resp.document})
         })
-        .catch((err)=>console.log('error pulling doc', err))
+        .catch((err)=>console.log('error pulling doc', err));
+
     }
 
 
@@ -383,17 +422,39 @@ class MyEditor extends React.Component {
 
                     <div className="docContainer">
                         <div className='documentControls'>
-                            <div>File Edit View Help</div>
+                            <div>
+                                <FlatButton label="File" onTouchTap={this.handleTouchTap.bind(this)} />
+                                <FlatButton label="Edit" />
+                                <FlatButton label="View" />
+                                <FlatButton label="Help" />
+                            </div>
+
+                            <Popover
+                                open={this.state.isFileOpen}
+                                anchorEl={this.state.anchorEl}
+                                anchorOrigin={{horizontal: 'middle', vertical: 'bottom'}}
+                                targetOrigin={{horizontal: 'middle', vertical: 'bottom'}}
+                                onRequestClose={this.handleRequestClose.bind(this)}
+                                animation={PopoverAnimationVertical}
+                                useLayerForClickAway={true}
+                            >
+                                <Menu onChange={this.menuSelection.bind(this)}>
+                                    <MenuItem value={1} primaryText="New"/>
+                                    <MenuItem value={2} primaryText="Open" />
+                                    <MenuItem value={3} primaryText="Save" />
+                                    <MenuItem value={4} primaryText="Close" />
+                                </Menu>
+                            </Popover>
 
                             <div className="rightSideControls">
-                                Shared with:
-                                {/* <List>
-                                    {this.state.collaborators.map((user) => (
-                                        <span className="collaboratorIcon" style={{backgroundColor: randomColor()}}>{user.name ? user.name.slice(0,1) : '0'}</span>
+                                {/* <span style={{display: 'flex', alignSelf: 'center'}}>Shared with:</span>
+                                    <List style={{paddingLeft: '15px', paddingRight: '10px'}}>
+                                    {this.state.collaborators.map((user, i) => (
+                                        <span key={i} className="collaboratorIcon" style={{backgroundColor: randomColor()}}>{user.name.slice(0,1)}</span>
 
                                     ))}
 
-                                </List> */}
+                                </List>  */}
                                 <RaisedButton
                                     label={"add collaborators"}
                                     style={{margin: 5}}

@@ -43,7 +43,7 @@ class Root extends React.Component {
           <Switch>
               {/* <Route exact path="/" component={Login}/> */}
               <Route exact path="/" render={(props) => <Login store={this.props.store}/>}/>
-              <Route exact path="/register" component={Register}/>
+              <Route exact path="/register" render={(props) => <Register store={this.props.store}/>}/>
               <Route exact path="/directory/" render={(props) => <Directory store={this.props.store}/>} />
               <Route path="/editor/:docId" render={(props) => <MyEditor {...props} store={this.props.store}/>} />
               <Route path ="/" component={Login}/>

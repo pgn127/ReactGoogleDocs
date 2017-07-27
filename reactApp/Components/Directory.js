@@ -21,7 +21,7 @@ class Directory extends React.Component {
     super(props);
     this.state = {
       user: {},
-      documents: [],
+      documents: [{_id:0, title:"You do not have any documents yet!", dateCreated: Date.now()}],
       value: 1,
       isOpen: false,
       isDocModalOpen: false,
@@ -32,6 +32,8 @@ class Directory extends React.Component {
       newDocId: '',
       selectedDoc: {},
       loggedIn: true,
+      isDocModalOpen: false,
+      isPassModalOpen: false,
     }
   }
 
@@ -61,17 +63,6 @@ class Directory extends React.Component {
     .catch((err)=>console.log(err))
   }
 
-  logged(){
-    fetch('http://localhost:3000/isLoggedIn', {credentials: 'include'})
-    .then((response) => {
-      return response.json()
-    })
-    .then((resp) => {
-      console.log("pulled resp", resp);
-    })
-    .catch((err)=>console.log(err))
-  }
-
   filter(event, value){
     switch(value) {
       case 1:
@@ -92,18 +83,22 @@ class Directory extends React.Component {
     this.setState({value: value, isOpen: false})
   }
   dateSortNew(){
-    let documents = [...this.state.documents]
-    documents.sort(function(a,b){
-      return new Date(parseInt(b.dateCreated)) - new Date(parseInt(a.dateCreated));
-    });
-    this.setState({documents: documents});
+    if (this.state.documents.length > 0){
+      let documents = [...this.state.documents]
+      documents.sort(function(a,b){
+        return new Date(parseInt(b.dateCreated)) - new Date(parseInt(a.dateCreated));
+      });
+      this.setState({documents: documents});
+    }
   }
   dateSortOld(){
-    let documents = [...this.state.documents]
-    documents.sort(function(a,b){
-      return new Date(parseInt(a.dateCreated)) - new Date(parseInt(b.dateCreated));
-    });
-    this.setState({documents: documents});
+    if (this.state.documents.length > 0){
+      let documents = [...this.state.documents]
+      documents.sort(function(a,b){
+        return new Date(parseInt(a.dateCreated)) - new Date(parseInt(b.dateCreated));
+      });
+      this.setState({documents: documents});
+    }
   }
 
 
@@ -114,7 +109,10 @@ class Directory extends React.Component {
       return response.json()
     })
     .then((resp) => {
-      this.setState({documents: resp.documents})
+      console.log("pulled resp", resp);
+      if (resp.documents.length > 0){
+        this.setState({documents: resp.documents})
+      }
     })
     .catch((err)=>console.log('error in finding all owned docuemnts', err))
   }
@@ -127,7 +125,9 @@ class Directory extends React.Component {
     })
     .then((resp) => {
       console.log("pulled resp", resp);
-      this.setState({documents: resp.documents})
+      if (resp.documents.length > 0){
+        this.setState({documents: resp.documents})
+      }
     })
     .catch((err)=>console.log(err))
   }
@@ -238,34 +238,33 @@ class Directory extends React.Component {
               onChange={this.titleChange.bind(this)}
           />
           <input
-              type="text"
+              type="password"
               placeholder="Password for Document"
               value={this.state.docPass}
               onChange={this.passChange.bind(this)}
           />
 
           <div style={{ textAlign: 'right', padding: 8, margin: '24px -24px -24px -24px' }}>
-              {[<FlatButton label="Cancel" primary={true} onClick={() => this.onModalClose('isDocModalOpen')}/>,
-                  <FlatButton type="submit" label="Submit" primary={true}/>,
+              {[<FlatButton key={700} label="Cancel" primary={true} onClick={() => this.onModalClose('isDocModalOpen')}/>,
+                  <FlatButton key={800}  type="submit" label="Submit" primary={true}/>,
               ]}
           </div>
       </form>)
 
       const enterPasswordForm = (<form className="commentForm" onSubmit={() => this.checkPassword()}>
           <input
-              type="text"
+              type="password"
               placeholder="Password for Document"
               value={this.state.passwordGuess}
               onChange={this.passGuessChange.bind(this)}
           />
 
           <div style={{ textAlign: 'right', padding: 8, margin: '24px -24px -24px -24px' }}>
-              {[<FlatButton label="Cancel" primary={true} onClick={() => this.onModalClose('isPassModalOpen')}/>,
-                  <FlatButton type="submit" label="Submit" primary={true}/>,
+              {[<FlatButton key={900} label="Cancel" primary={true} onClick={() => this.onModalClose('isPassModalOpen')}/>,
+                  <FlatButton key={1000} type="submit" label="Submit" primary={true}/>,
               ]}
           </div>
       </form>)
-
 
     // console.log(this.state.newDocId);
     if (this.state.newDocId){
@@ -282,13 +281,12 @@ class Directory extends React.Component {
       )
     }
     return (
-      <div>
+      <div style={{backgroundColor: 'white', }}>
 
           <h1 style={{textAlign: 'center', fontSize: '40px', paddingTop: '20px'}} >Document Directory</h1>
           <h2 style={{textAlign: 'center'}} >Open document to edit or create a new one!</h2>
           <h3>{`logged in as ${this.state.user.email} with id ${this.state.user._id}`}</h3>
-          <div>
-
+          <div style={{marginLeft: '5px', marginRight: '5px'}}>
               <div style={{display: 'flex', justifyContent: 'space-between'}}>
                   <div>
                       <FloatingActionButton onTouchTap={() => this.onModalOpen('isDocModalOpen')}>
@@ -302,9 +300,7 @@ class Directory extends React.Component {
                           onRequestClose={() => this.onModalClose('isDocModalOpen')}
                       >{newDocForm}</Dialog>
                   </div>
-                  <div>
-
-
+                  {this.state.documents[0]._id!==0?<div>
                       <RaisedButton
                           onTouchTap={this.handleTouchTap.bind(this)}
                           label="Filter"
@@ -325,12 +321,14 @@ class Directory extends React.Component {
                               <MenuItem value={4} primaryText="Oldest" />
                           </Menu>
                       </Popover>
+                      </div>: null}
                   </div>
               </div>
 
               {this.state.documents.map((doc, i)=>
-                  <div>
+                  <div key={i}>
                       <List>
+                        {doc._id ?
                           <ListItem
                               key={i}
                               leftAvatar={<Avatar icon={<ActionAssignment />} backgroundColor={blue500} />}
@@ -344,7 +342,8 @@ class Directory extends React.Component {
                                       this.onModalOpen('isPassModalOpen')
                                   })}}
                               secondaryText={new Date(parseInt(doc.dateCreated)).toLocaleString()}
-                          />
+                          />:
+                          <div key={i} style={{textAlign: 'center'}}>You current do not have any documents...</div>}
                       </List>
                       <Divider />
                   </div>
@@ -356,11 +355,8 @@ class Directory extends React.Component {
                   open={this.state.isPassModalOpen}
                   onRequestClose={() => this.onModalClose('isPassModalOpen')}
               >{enterPasswordForm}</Dialog>
-
+              <RaisedButton label="Logout" secondary={true} onMouseDown={this.logout.bind(this)}/>
           </div>
-          <button onMouseDown={this.logout.bind(this)}>Logout</button>
-          <button onMouseDown={this.logged.bind(this)}>Test to Check if logged in</button>
-        </div>
       )
     }
   };
