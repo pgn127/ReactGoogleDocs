@@ -23,8 +23,8 @@ var Mousetrap = require('mousetrap');
 
 
 import io from 'socket.io-client'
-const socket = io.connect("http://be747dfd.ngrok.io/");
-const baseURL = 'http://be747dfd.ngrok.io/'
+const socket = io.connect("http://localhost:3000/");
+const baseURL = 'http://localhost:3000/'
 
 const styleMap = {
   'BOLD': {
@@ -72,6 +72,7 @@ const extendedBlockRenderMap = DefaultDraftBlockRenderMap.merge(blockRenderMap);
 class MyEditor extends React.Component {
   constructor(props) {
     super(props);
+    this.previousHighLight = null;
     this.state = {
       editorState: EditorState.createEmpty(), //editorState from draftjs
       title: 'Untitled Document',
@@ -115,6 +116,9 @@ class MyEditor extends React.Component {
         },
         'TEXT-ALIGN-RIGHT': {
           'textAlign': 'right'
+        },
+        'RED': {
+          'backgroundColor': 'red'
         }
       },
       room: ""
@@ -127,14 +131,38 @@ class MyEditor extends React.Component {
       return false;
     }
   }
+
   autoSave(){
     setInterval(this.onSave.bind(this), 30000);
     this.setState({
       autosave: !this.state.autosave,
     })
   }
+
   onChange(editorState) {
     this.setState({editorState: editorState, saved: false})
+    // const selection = editorState.getSelection();
+    //
+    // if(this.previousHighLight) {
+    //   editorState = EditorState.acceptSelection(editorState, this.previousHighLight);
+    //   editorState = RichUtils.toggleInlineStyle(editorState, 'RED');
+    //   editorState = EditorState.acceptSelection(editorState, selection);
+    // }
+    //
+    // editorState = RichUtils.toggleInlineStyle(editorState, 'RED');
+    // this.previousHighLight = editorState.getSelection();
+    //
+    // const contentState = editorState.getCurrentContent();
+    // const stringifiedContent = JSON.stringify(convertToRaw(contentState));
+    //
+    // socket.emit('cursor', {
+    //   room: this.state.room,
+    //   currentContent: stringifiedContent
+    // });
+    //
+    // this.setState({editorState: editorState});
+
+    //this.setState({editorState: editorState, saved: false})
 
     var selectionState = editorState.getSelection();
     var anchorKey = selectionState.getAnchorKey();
@@ -143,6 +171,14 @@ class MyEditor extends React.Component {
     var start = selectionState.getStartOffset();
     var end = selectionState.getEndOffset();
     var selectedText = currentContentBlock.getText().slice(start, end);
+
+    if(this.previousHighLight) {
+      editorState = EditorState.acceptSelection(editorState, this.previousHighLight);
+      editorState = RichUtils.toggleInlineStyle(editorState, 'RED');
+      editorState = EditorState.acceptSelection(editorState, selectionState);
+    }
+    editorState = RichUtils.toggleInlineStyle(editorState, 'RED');
+    this.previousHighLight = editorState.getSelection();
 
     console.log("onChange", currentContent.getPlainText());
     console.log(start, end, selectedText);
@@ -153,9 +189,19 @@ class MyEditor extends React.Component {
       selectedText: selectedText,
       currentContent: JSON.stringify(convertToRaw(editorState.getCurrentContent()))
     });
+
+    //this.setState({editorState: editorState});
+
   }
 
   componentDidMount(){
+    socket.on('update', (data) => {
+      console.log('hit');
+      const updatedState = convertFromRaw(JSON.parse(data.currentContent));
+      this.setState({editorState: EditorState.createWithContent(updatedState)});
+
+    });
+
     socket.on('redirect', () => {
       alert("Full");
       this.props.history.push('/directory');
@@ -227,71 +273,71 @@ class MyEditor extends React.Component {
     var newStyleMap = Object.assign({}, this.state.styleMap, {'FONT-SIZE': {
       fontSize: newFontSize
     }});
-      this.setState({styleMap: newStyleMap}, () => {
-        this.state.styleMap['FONT-SIZE-' + fontSize.toString()] = {
-          fontSize: newFontSize
-        };
-        console.log(this.state.styleMap);
-        this.onChange(RichUtils.toggleInlineStyle(
-          this.state.editorState,
-           'FONT-SIZE-' + (fontSize + 2).toString()
-        ));
-        this.onChange(RichUtils.toggleInlineStyle(
-          this.state.editorState,
-           'FONT-SIZE-' + fontSize.toString()
-        ));
-      });
-    }
+    this.setState({styleMap: newStyleMap}, () => {
+      this.state.styleMap['FONT-SIZE-' + fontSize.toString()] = {
+        fontSize: newFontSize
+      };
+      console.log(this.state.styleMap);
+      this.onChange(RichUtils.toggleInlineStyle(
+        this.state.editorState,
+        'FONT-SIZE-' + (fontSize + 2).toString()
+      ));
+      this.onChange(RichUtils.toggleInlineStyle(
+        this.state.editorState,
+        'FONT-SIZE-' + fontSize.toString()
+      ));
+    });
+  }
 
-    onFontColorClick(fontColor) {
-     var hex = fontColor.hex;
-     this.state.styleMap['FONT-COLOR-' + hex] = {
-        'color': hex
-     };
-     this.onChange(RichUtils.toggleInlineStyle(
-       this.state.editorState,
-       'FONT-COLOR-' + hex
-     ));
-    }
+  onFontColorClick(fontColor) {
+    var hex = fontColor.hex;
+    this.state.styleMap['FONT-COLOR-' + hex] = {
+      'color': hex
+    };
+    this.onChange(RichUtils.toggleInlineStyle(
+      this.state.editorState,
+      'FONT-COLOR-' + hex
+    ));
+  }
 
-    _onTab(e) {
-        const maxDepth = 8;
-        this.onChange(RichUtils.onTab(e, this.state.editorState, maxDepth));
-    }
+  _onTab(e) {
+    const maxDepth = 8;
+    this.onChange(RichUtils.onTab(e, this.state.editorState, maxDepth));
+  }
 
 
-    onSave(){
-        var newContent = JSON.stringify(convertToRaw(this.state.editorState.getCurrentContent()));
-        // console.log('content that is being saved is ', newContent);
-        var newTitle = this.state.title;
-        fetch(baseURL+'/documents/save/'+this.props.match.params.docId, {
-            method: 'POST',
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                content: newContent,
-                title: newTitle,
-                //   password: newPassword,
-                //   collaborators: newCollaborators
+  onSave(){
+    var newContent = JSON.stringify(convertToRaw(this.state.editorState.getCurrentContent()));
+    // console.log('content that is being saved is ', newContent);
+    var newTitle = this.state.title;
+    fetch(baseURL+'/documents/save/'+this.props.match.params.docId, {
+      method: 'POST',
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        content: newContent,
+        title: newTitle,
+        //   password: newPassword,
+        //   collaborators: newCollaborators
 
-            })
-        })
-        .then((response) => {
-          console.log('response in on save ', response);
-            return response.json()
-        })
-        .then((resp) => {
-            console.log("saved document", resp.document);
-            const contentState = JSON.stringify(convertToRaw(this.state.editorState.getCurrentContent()));
-            var rawContent = this.state.editorState.getCurrentContent();
-            var currentDocument = Object.assign({}, resp.document, {content: rawContent})
+      })
+    })
+    .then((response) => {
+      console.log('response in on save ', response);
+      return response.json()
+    })
+    .then((resp) => {
+      console.log("saved document", resp.document);
+      const contentState = JSON.stringify(convertToRaw(this.state.editorState.getCurrentContent()));
+      var rawContent = this.state.editorState.getCurrentContent();
+      var currentDocument = Object.assign({}, resp.document, {content: rawContent})
 
-            this.setState({saved: true, currentDocument: currentDocument, title: newTitle, editorState: EditorState.createWithContent(rawContent) })
-        })
-        .catch((err)=>console.log('error saving doc', err))
-        //   console.log('the current document to save is ', this.state.currentDocument);
-    }
+      this.setState({saved: true, currentDocument: currentDocument, title: newTitle, editorState: EditorState.createWithContent(rawContent) })
+    })
+    .catch((err)=>console.log('error saving doc', err))
+    //   console.log('the current document to save is ', this.state.currentDocument);
+  }
 
 
 
@@ -409,73 +455,73 @@ class MyEditor extends React.Component {
   }
 
 
-    render() {
-        const actions = [
-            <FlatButton label="Cancel" primary={true} onTouchTap={this.onAlertClose.bind(this)}/>,
-              <FlatButton label="Go back anyway" primary={true} onTouchTap={this.onAlertOk.bind(this)}/>]
-            if (this.state.goBack){
-              return(
-                <Redirect to='/directory' />
-              )
-            }
-            return (
-                <div >
-                    <AppBar
-                        title={
-                            <TextField id="text-field-controlled" inputStyle={this.state.title === 'Untitled Document' ? {color: 'white', fontStyle: 'italic'}: {color: 'white'}} underlineShow={false} value={this.state.title} onChange={this.onTitleEdit.bind(this)} />}
-                        onLeftIconButtonTouchTap={this.state.saved ? this.onAlertOk.bind(this): this.onAlertOpen.bind(this)}
-                    />
-
-                    <Dialog
-                        title="Changes not saved!"
-                        actions={actions}
-                        modal={true}
-                        open={this.state.alertOpen}
-                    >You have unsaved changes! Click save to prevent your changes from being lost!</Dialog>
-
-
-                    <div className="docContainer">
-                        <div className='documentControls'>
-                          <div>
-                            <FlatButton label="File" onTouchTap={this.handleTouchTap.bind(this)} />
-                            <FlatButton label="Edit" />
-                            <FlatButton label="View" />
-                            <FlatButton label="Help" />
-                          </div>
-
-                            <Popover
-                              open={this.state.isFileOpen}
-                              anchorEl={this.state.anchorEl}
-                              anchorOrigin={{horizontal: 'middle', vertical: 'bottom'}}
-                              targetOrigin={{horizontal: 'middle', vertical: 'bottom'}}
-                              onRequestClose={this.handleRequestClose.bind(this)}
-                              animation={PopoverAnimationVertical}
-                              useLayerForClickAway={true}
-                              >
-                                <Menu onChange={this.menuSelection.bind(this)}>
-                                  <MenuItem value={1} primaryText="New"/>
-                                  <MenuItem value={2} primaryText="Open" />
-                                  <MenuItem value={3} primaryText="Save" />
-                                  <MenuItem value={4} primaryText="Close" />
-                                </Menu>
-                              </Popover>
-
-                            <div className="rightSideControls">
-                                <span style={{display: 'flex', alignSelf: 'center'}}>Shared with:</span>
-                                <List style={{paddingLeft: '15px', paddingRight: '10px'}}>
-                                    {this.state.collaborators.map((user, i) => (
-                                        <span key={i} className="collaboratorIcon" style={{backgroundColor: randomColor()}}>{user.name.slice(0,1)}</span>
-
-                                    ))}
-
-                                </List>
-                                <RaisedButton
-                                    label={this.state.saved ? "Saved" : "Save"}
-                                    style={{margin: 5}}
-                                    primary={true}
-                                    disabled={this.state.saved}
-                                    onTouchTap={this.onSave.bind(this)}/>
-                            </div>
+  // render() {
+  //     const actions = [
+  //         <FlatButton label="Cancel" primary={true} onTouchTap={this.onAlertClose.bind(this)}/>,
+  //           <FlatButton label="Go back anyway" primary={true} onTouchTap={this.onAlertOk.bind(this)}/>]
+  //         if (this.state.goBack){
+  //           return(
+  //             <Redirect to='/directory' />
+  //           )
+  //         }
+  //         return (
+  //             <div >
+  //                 <AppBar
+  //                     title={
+  //                         <TextField id="text-field-controlled" inputStyle={this.state.title === 'Untitled Document' ? {color: 'white', fontStyle: 'italic'}: {color: 'white'}} underlineShow={false} value={this.state.title} onChange={this.onTitleEdit.bind(this)} />}
+  //                     onLeftIconButtonTouchTap={this.state.saved ? this.onAlertOk.bind(this): this.onAlertOpen.bind(this)}
+  //                 />
+  //
+  //                 <Dialog
+  //                     title="Changes not saved!"
+  //                     actions={actions}
+  //                     modal={true}
+  //                     open={this.state.alertOpen}
+  //                 >You have unsaved changes! Click save to prevent your changes from being lost!</Dialog>
+  //
+  //
+  //                 <div className="docContainer">
+  //                     <div className='documentControls'>
+  //                       <div>
+  //                         <FlatButton label="File" onTouchTap={this.handleTouchTap.bind(this)} />
+  //                         <FlatButton label="Edit" />
+  //                         <FlatButton label="View" />
+  //                         <FlatButton label="Help" />
+  //                       </div>
+  //
+  //                         <Popover
+  //                           open={this.state.isFileOpen}
+  //                           anchorEl={this.state.anchorEl}
+  //                           anchorOrigin={{horizontal: 'middle', vertical: 'bottom'}}
+  //                           targetOrigin={{horizontal: 'middle', vertical: 'bottom'}}
+  //                           onRequestClose={this.handleRequestClose.bind(this)}
+  //                           animation={PopoverAnimationVertical}
+  //                           useLayerForClickAway={true}
+  //                           >
+  //                             <Menu onChange={this.menuSelection.bind(this)}>
+  //                               <MenuItem value={1} primaryText="New"/>
+  //                               <MenuItem value={2} primaryText="Open" />
+  //                               <MenuItem value={3} primaryText="Save" />
+  //                               <MenuItem value={4} primaryText="Close" />
+  //                             </Menu>
+  //                           </Popover>
+  //
+  //                         <div className="rightSideControls">
+  //                             <span style={{display: 'flex', alignSelf: 'center'}}>Shared with:</span>
+  //                             <List style={{paddingLeft: '15px', paddingRight: '10px'}}>
+  //                                 {this.state.collaborators.map((user, i) => (
+  //                                     <span key={i} className="collaboratorIcon" style={{backgroundColor: randomColor()}}>{user.name.slice(0,1)}</span>
+  //
+  //                                 ))}
+  //
+  //                             </List>
+  //                             <RaisedButton
+  //                                 label={this.state.saved ? "Saved" : "Save"}
+  //                                 style={{margin: 5}}
+  //                                 primary={true}
+  //                                 disabled={this.state.saved}
+  //                                 onTouchTap={this.onSave.bind(this)}/>
+  //                         </div>
 
   onCollabClose() {
     this.setState({collabModalOpen: false});
@@ -508,11 +554,13 @@ class MyEditor extends React.Component {
           <Redirect to='/directory' />
         )
       }
-      socket.on('update', (data) => {
-        const updatedState = convertFromRaw(JSON.parse(data.currentContent));
-        this.setState({editorState: EditorState.createWithContent(updatedState)});
 
-      });
+      // socket.on('update', (data) => {
+      //   const updatedState = convertFromRaw(JSON.parse(data.currentContent));
+      //   this.setState({editorState: EditorState.createWithContent(updatedState)});
+      //
+      // });
+
       return (
 
         <div >
