@@ -24,7 +24,7 @@ var Mousetrap = require('mousetrap');
 
 import io from 'socket.io-client'
 
-const baseURL = 'http://be747dfd.ngrok.io'//'http://localhost:3000'
+const baseURL = 'http://localhost:3000'//'http://be747dfd.ngrok.io'
 
 
 const styleMap = {
@@ -156,7 +156,7 @@ class MyEditor extends React.Component {
     })
 
     this.socket.on('receiveNewCursor', incomingSelectionObj => {
-        console.log('reeived cursor move');
+        // console.log('user has reeived cursor move');
         let editorState = this.state.editorState;
         const originalEditorState = editorState;
         const originalSelection = this.state.editorState.getSelection();
@@ -165,16 +165,27 @@ class MyEditor extends React.Component {
         //take the original selection stateand change all its values to be the selectionstateobj  that we just received
         const incomingSelectionState = originalSelection.merge(incomingSelectionObj)
 
-        const temporaryEditorState = EditorState.forceSelection(originalEditorState, incomingSelectionObj)
+        const temporaryEditorState = EditorState.forceSelection(originalEditorState, incomingSelectionState)
 
-        this.setState({editorState: temporaryEditorState}, function() {
-            //were now referring to browser selectionstateobjc
-            const windowSelection = window.getSelection();
-            const range = windowSelection.getRangeAt(0); //cursor wil always be a single range so u can just ge tthe first range in the array
-            const rects = range.getClientRects()[0];
-            const {top, left, bottom} = rects;
-            this.setState({editorState: originalEditorState, top, left, height: bottom - top})
-        })
+        if(temporaryEditorState) {
+            // console.log('temporaryEditorState nto undefined ', temporaryEditorState);
+            this.setState({editorState: temporaryEditorState}, function() {
+                //were now referring to browser selectionstateobjc
+                const windowSelection = window.getSelection();
+                if(windowSelection.rangeCount>0){
+
+                    // console.log('window selection shoudlnt be unfeined in rangecount', windowSelection);
+                    const range = windowSelection.getRangeAt(0); //cursor wil always be a single range so u can just ge tthe first range in the array
+
+                    const rects = range.getClientRects()[0];
+
+                    const {top, left, bottom} = rects;
+                    this.setState({editorState: originalEditorState, top, left, height: bottom - top})
+                }
+            })
+        } else {
+            console.log('temportaray state undefined wtf');
+        }
     })
 
     //emit a joined message to everyone else also in the same document, send the document id of what u are trying to join
@@ -201,57 +212,59 @@ class MyEditor extends React.Component {
     })
   }
   onChange(editorState) {
+    //   console.log('on change editorstate ', editorState);
       this.setState({editorState: editorState, saved: false})
-//save current selection
+      //save current selection
       const selection = editorState.getSelection() //refers to most up to date selection and save it
 
       //if i have a previous highlight,
       if(this.previousHighlight){ //if i have an old selection, then  change editorstate to be the result of
 
-
           //accept selection changes the editorstate to have the previous highlight selection- turn off where the old highlight was,
           editorState = EditorState.acceptSelection(editorState, this.previousHighlight)
           //switch to old editorstate
-         editorState = RichUtils.toggleInlineStyle(editorState, 'RED'); //turn off style on the old selection since we had turned this on previously
+          editorState = RichUtils.toggleInlineStyle(editorState, 'RED'); //turn off style on the old selection since we had turned this on previously
 
-         editorState = EditorState.acceptSelection(editorState, selection)
-         //switch back to new selection by applying 'selection' (that we previously saved before overwirting ) to the editorState
+          editorState = EditorState.acceptSelection(editorState, selection)
+          //switch back to new selection by applying 'selection' (that we previously saved before overwirting ) to the editorState
 
       }
       //apply and remove instead of togle to fix the glitch???
 
-editorState = RichUtils.toggleInlineStyle(editorState, 'RED');
-    this.previousHighlight = editorState.getSelection(); //set previous heighlight  to be newest selection, if theres no new highlight this seems to not even  happen
+      editorState = RichUtils.toggleInlineStyle(editorState, 'RED');
+      this.previousHighlight = editorState.getSelection(); //set previous heighlight  to be newest selection, if theres no new highlight this seems to not even  happen
 
-//DETECTING CURSOR VERSUS HIGHLIGHT: if your cursor is only in one spot and not highlighting anything then this is not a highlight
-if(selection.getStartOffset === selection.getEndOffset()){
-    console.log('selection', selection);
-    this.socket.emit('cursorMove', selection)
-}
+      //DETECTING CURSOR VERSUS HIGHLIGHT: if your cursor is only in one spot and not highlighting anything then this is not a highlight
+      if(selection.getStartOffset() === selection.getEndOffset()){
+        //only emit a cursor event if it took place in the editor (dont emit an event where user has clicked somewhere out of the screen)
+            if(selection._map._root.entries[5][1]){
+                this.socket.emit('cursorMove', selection)
+            }
+      }
 
-    // this.setState({editorState: editorState, saved: false})
+      // this.setState({editorState: editorState, saved: false})
 
-    var currentContent = convertToRaw(editorState.getCurrentContent()); //returns content state out of the editor state
-    this.socket.emit('newContent', JSON.stringify(currentContent)); //emit a newcontent event
+      var currentContent = convertToRaw(editorState.getCurrentContent()); //returns content state out of the editor state
+      this.socket.emit('newContent', JSON.stringify(currentContent)); //emit a newcontent event
 
 
 
-    // var selectionState = editorState.getSelection();
-    // var anchorKey = selectionState.getAnchorKey();
-    // // var currentContentBlock = currentContent.getBlockForKey(anchorKey);
-    // var start = selectionState.getStartOffset();
-    // var end = selectionState.getEndOffset();
-    // var selectedText = currentContentBlock.getText().slice(start, end);
+      // var selectionState = editorState.getSelection();
+      // var anchorKey = selectionState.getAnchorKey();
+      // // var currentContentBlock = currentContent.getBlockForKey(anchorKey);
+      // var start = selectionState.getStartOffset();
+      // var end = selectionState.getEndOffset();
+      // var selectedText = currentContentBlock.getText().slice(start, end);
 
-    // console.log("onChange", currentContent.getPlainText());
-    // console.log(start, end, selectedText);
-    // socket.emit('cursor', {
-    //   room: this.state.room,
-    //   start: start,
-    //   end: end,
-    //   selectedText: selectedText,
-    //   currentContent: currentContent
-    // });
+      // console.log("onChange", currentContent.getPlainText());
+      // console.log(start, end, selectedText);
+      // socket.emit('cursor', {
+      //   room: this.state.room,
+      //   start: start,
+      //   end: end,
+      //   selectedText: selectedText,
+      //   currentContent: currentContent
+      // });
   }
 
 //to ensure something happens righ when component is about to get killed
@@ -646,17 +659,17 @@ componentDidMount(){
                 </div>
                 <div className="editor">
                     {this.state.top ? (<div style={{position: 'absolute', backgroundColor: 'red', width: '2px', height: this.state.height, top: this.state.top, left: this.state.left}}></div>) : undefined}
-                        <Editor
-                          customStyleMap={this.state.styleMap}
-                          editorState={this.state.editorState}
-                          onChange={this.onChange.bind(this)}
-                          onTab={this._onTab.bind(this)}
-                          blockRenderMap={extendedBlockRenderMap}
-                          blockStyleFn={this.myBlockStyleFn}
-                        />
-                      </div>
-                    </div>
-                  </div>
+                    <Editor
+                        customStyleMap={this.state.styleMap}
+                        editorState={this.state.editorState}
+                        onChange={this.onChange.bind(this)}
+                        onTab={this._onTab.bind(this)}
+                        blockRenderMap={extendedBlockRenderMap}
+                        blockStyleFn={this.myBlockStyleFn}
+                    />
+                </div>
+            </div>
+        </div>
                 );
               }
             }

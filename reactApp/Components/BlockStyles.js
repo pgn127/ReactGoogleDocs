@@ -4,12 +4,20 @@ import StyleButton from './StyleButton.js'
 
 
 const BlockStyles = (props) => {
-      const {editorState} = props;
+     const {editorState} = props;
+
+    // console.log('editor.getselection', editorState.getSelection(),editorState.getSelection().getStartKey(),editorState.getCurrentContent().getBlockForKey(selection.getStartKey()));
+
       const selection = editorState.getSelection();
-      const blockType = editorState
+      const block = editorState
         .getCurrentContent()
         .getBlockForKey(selection.getStartKey())
-        .getType();
+
+        // .getType();
+        let blockType;
+        if(block) {
+            blockType = block.getType()
+        }
 
       return (
         <div className="inlineControls">
@@ -18,7 +26,7 @@ const BlockStyles = (props) => {
                     if(type.label === 'icon-align-left') {
                         return <StyleButton
                             key={type.label}
-                            active={type.style === blockType}
+                            active={blockType && type.style === blockType}
                             label={type.label}
                             onToggle={props.onToggle}
                             style={type.style}
@@ -27,7 +35,7 @@ const BlockStyles = (props) => {
                     else if(type.label === 'icon-align-center') {
                         return <StyleButton
                             key={type.label}
-                            active={type.style === blockType}
+                            active={blockType && type.style === blockType}
                             label={type.label}
                             onToggle={props.onToggle}
                             style={type.style}
@@ -36,7 +44,7 @@ const BlockStyles = (props) => {
                     else if(type.label === 'icon-align-right') {
                         return <StyleButton
                             key={type.label}
-                            active={type.style === blockType}
+                            active={blockType && type.style === blockType}
                             label={type.label}
                             onToggle={props.onToggle}
                             style={type.style}
@@ -45,7 +53,7 @@ const BlockStyles = (props) => {
                     else {
                         return <StyleButton
                             key={type.label}
-                            active={type.style === blockType}
+                            active={blockType && type.style === blockType}
                             label={type.label}
                             onToggle={props.onToggle}
                             style={type.style}
