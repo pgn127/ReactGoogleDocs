@@ -28,12 +28,21 @@ export default class Login extends React.Component {
       email: '',
       password: '',
       loggedin: false,
-      user: {}
     };
 
   }
+
+  componentDidMount(){
+    //   if (this.props.store.get('userId')){
+    var storedUser = this.props.store.get('user')
+    //TODO: make sure that this stored user is actually valid in mongodb
+    if (storedUser && storedUser._id){
+      this.setState({
+        loggedin:true,
+      })
+    }
+  }
   handleSubmit(){
-    console.log("in submit");
     fetch('http://localhost:3000/login', {
       credentials: 'include',
       method: 'POST',
@@ -42,14 +51,24 @@ export default class Login extends React.Component {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        name: this.state.email,
+        email: this.state.email,
         password: this.state.password
       })
     })
-    .then((response) => response.json())
+    .then((response) => {
+        console.log('response of login is ', response);
+        return response.json()
+    })
     .then((resp) => {
-      console.log(resp.user);
-      this.setState({email: '', password: '', loggedin: true, user: resp.user});
+        //TODO: check if the user is in the response!!! handle errors
+      console.log('resp.user in login response', resp.user);
+      this.props.store.set('user', resp.user);
+      //console.log("USERSTORE", this.props.store.get('user'));
+      this.setState({email: '', password: '', loggedin: true});
+    })
+    .catch( (err) => {
+        console.log('caught error in handle submit of login ', err);
+        alert(`error in handlesubmit of login ${err}`)
     })
   }
   render() {

@@ -6,7 +6,7 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { Router, Route } from 'react-router';
+import { Router, Route, } from 'react-router';
 import Root from './Components/Root.js'
 import createHashHistory from 'history/createHashHistory';
 import MyEditor from './Components/MyEditor.js'
@@ -15,6 +15,8 @@ import Login from './Components/Login.js'
 import {Editor, EditorState, convertFromRaw, convertToRaw} from 'draft-js';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import injectTapEventPlugin from 'react-tap-event-plugin';
+const Store = window.require('electron-store');
+const store = new Store();
 // var injectTapEventPlugin = require("react-tap-event-plugin");
 import 'bulma/css/bulma.css'
 import 'draft-js/dist/Draft.css';
@@ -48,9 +50,9 @@ const App = () => (
 
 ReactDOM.render(
 
-  <MuiThemeProvider>
-      <Root history={history}/>
-  </MuiThemeProvider>,
+  <MuiThemeProvider >
+      <Root store={store} history={history}/>
+    </MuiThemeProvider>,
 
   // <App />,
 

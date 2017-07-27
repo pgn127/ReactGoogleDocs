@@ -159,6 +159,7 @@ router.post('/documents/save/:documentId', function(req,res) {
     var docPassword = req.body.password;
     var docContent = req.body.content;
     var docCollaborators = req.body.collaborators;
+    console.log('doc id received in save ', docId);
 
     Document.findById(docId, function(err, doc) {
         if(err){

@@ -5,6 +5,7 @@ const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
 const passport = require('passport');
 const LocalStrategy = require('passport-local');
+
 const MongoStore = require('connect-mongo/es5')(session);
 const routes = require('./routes/routes');
 const auth = require('./routes/auth');
@@ -16,16 +17,15 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(expressValidator());
 app.use(cookieParser('secretCat'));
 app.use(express.static('build'));
+
 app.use(session({
     secret: 'Catscoookie',
-    //name: 'Catscoookie',
     store: new MongoStore({ mongooseConnection: mongoose.connection }),
     // proxy: true,
     resave: true,
     // saveUninitialized: true
 }));
-app.use(passport.initialize());
-app.use(passport.session());
+
 passport.serializeUser(function(user, done) {
   console.log("SERIALIZAE");
   done(null, user._id);
@@ -36,19 +36,19 @@ passport.deserializeUser(function(id, done) {
     done(err, user);
   });
 });
-// passport strategy
-passport.use(new LocalStrategy({usernameField:"name", passwordField:"password"}, function(name, password, done) {
+
+passport.use(new LocalStrategy({usernameField:"email", passwordField:"password"}, function(email, password, done) {
     console.log("LOCAL");
-    models.User.findOne({ name: name }, function (err, user) {
+    models.User.findOne({ email: email }, function (err, user) {
       // if there's an error, finish trying to authenticate (auth failed)
       if (err) {
-        console.error(err);
+        console.error('error in passport local strategy finding user with that email', err);
         return done(err);
       }
       // if no user present, auth failed
       if (!user) {
         console.log(user);
-        return done(null, false, { message: 'Incorrect username.' });
+        return done(null, false, { message: 'Incorrect email/username.' });
       }
       // if passwords do not match, auth failed
       if (user.password !== password) {
@@ -59,13 +59,13 @@ passport.use(new LocalStrategy({usernameField:"name", passwordField:"password"},
     });
   }
 ));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.use('/', auth(passport));
 app.use('/', routes);
-// This line makes the build folder publicly available.
-app.use('/', (req, res) => {
-  console.log("IN USE");
-  res.sendFile(path.join(publicPath, 'index.html'));
-});
+
 if (! process.env.MONGODB_URI) {//check if source env.sh has been run
   throw new Error("MONGODB_URI is not in the environmental variables. Try running 'source env.sh'");
 }
@@ -101,7 +101,7 @@ io.on('connection', (socket) => {
 
   socket.on('cursor', (data) => {
     console.log(data);
-    socket.broadcast.to('data.room').emit('update', data);
+    socket.broadcast.to(data.room).emit('update', data);
   });
 
   socket.on('limit', () => {
