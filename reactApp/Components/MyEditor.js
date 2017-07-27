@@ -22,6 +22,7 @@ import MenuItem from 'material-ui/MenuItem';
 
 import io from 'socket.io-client'
 const socket = io.connect("http://localhost:3000");
+const baseURL = 'http://localhost:3000'
 
 const styleMap = {
   'BOLD': {
@@ -155,7 +156,7 @@ class MyEditor extends React.Component {
 
       });
       console.log(this.props.match.params.docId);
-        fetch('http://localhost:3000/documents/'+this.props.match.params.docId)
+        fetch(baseURL+'/documents/'+this.props.match.params.docId)
         .then((response) => {
 
             return response.json()
@@ -280,7 +281,7 @@ class MyEditor extends React.Component {
         var newContent = JSON.stringify(convertToRaw(this.state.editorState.getCurrentContent()));
         // console.log('content that is being saved is ', newContent);
         var newTitle = this.state.title;
-        fetch('http://localhost:3000/documents/save/'+this.props.match.params.docId, {
+        fetch(baseURL+'/documents/save/'+this.props.match.params.docId, {
             method: 'POST',
             headers: {
                 "Content-Type": "application/json"
@@ -330,7 +331,7 @@ class MyEditor extends React.Component {
     }
 
     onCollabSubmit() {
-        fetch('http://localhost:3000/documents/add/collaborator/'+this.props.match.params.docId, {
+        fetch(baseURL+'/documents/add/collaborator/'+this.props.match.params.docId, {
             method: 'POST',
             headers: {
                 "Content-Type": "application/json"
@@ -423,13 +424,15 @@ class MyEditor extends React.Component {
                     <div className="docContainer">
                         <div className='documentControls'>
                             <div>
-                                <FlatButton label="File" onTouchTap={this.handleTouchTap.bind(this)} />
+                                <FlatButton label="File"
+                                    // onTouchTap={this.handleTouchTap.bind(this)}
+                                />
                                 <FlatButton label="Edit" />
                                 <FlatButton label="View" />
                                 <FlatButton label="Help" />
                             </div>
 
-                            <Popover
+                            {/* <Popover
                                 open={this.state.isFileOpen}
                                 anchorEl={this.state.anchorEl}
                                 anchorOrigin={{horizontal: 'middle', vertical: 'bottom'}}
@@ -437,24 +440,24 @@ class MyEditor extends React.Component {
                                 onRequestClose={this.handleRequestClose.bind(this)}
                                 animation={PopoverAnimationVertical}
                                 useLayerForClickAway={true}
-                            >
+                                >
                                 <Menu onChange={this.menuSelection.bind(this)}>
                                     <MenuItem value={1} primaryText="New"/>
                                     <MenuItem value={2} primaryText="Open" />
                                     <MenuItem value={3} primaryText="Save" />
                                     <MenuItem value={4} primaryText="Close" />
                                 </Menu>
-                            </Popover>
+                            </Popover> */}
 
                             <div className="rightSideControls">
-                                {/* <span style={{display: 'flex', alignSelf: 'center'}}>Shared with:</span>
-                                    <List style={{paddingLeft: '15px', paddingRight: '10px'}}>
+                                <span style={{display: 'flex', alignSelf: 'center'}}>Shared with:</span>
+                                <List style={{paddingLeft: '15px', paddingRight: '10px'}}>
                                     {this.state.collaborators.map((user, i) => (
-                                        <span key={i} className="collaboratorIcon" style={{backgroundColor: randomColor()}}>{user.name.slice(0,1)}</span>
+                                        <span key={i} className="collaboratorIcon" style={{backgroundColor: randomColor()}}>{user.name ? user.name.slice(0,1) : 'Z'}</span>
 
                                     ))}
 
-                                </List>  */}
+                                </List>
                                 <RaisedButton
                                     label={"add collaborators"}
                                     style={{margin: 5}}
