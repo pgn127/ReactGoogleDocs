@@ -285,7 +285,7 @@ class Directory extends React.Component {
 
           <h1 style={{textAlign: 'center', fontSize: '40px', paddingTop: '20px'}} >Document Directory</h1>
           <h2 style={{textAlign: 'center'}} >Open document to edit or create a new one!</h2>
-          <h3>{`logged in as ${this.state.user.email} with id ${this.state.user._id}`}</h3>
+          <h3 style={{textAlign: 'center'}}>{this.state.user.email}</h3>
           <div style={{marginLeft: '5px', marginRight: '5px'}}>
               <div style={{display: 'flex', justifyContent: 'space-between'}}>
                   <div>
@@ -326,7 +326,7 @@ class Directory extends React.Component {
               </div>
 
               {this.state.documents.map((doc, i)=>
-                  <div key={i}>
+                  <div key={i} style={{backgroundColor: 'white'}}>
                       <List>
                         {doc._id ?
                           <ListItem
