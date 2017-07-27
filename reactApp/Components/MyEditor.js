@@ -25,7 +25,7 @@ var Mousetrap = require('mousetrap');
 import io from 'socket.io-client'
 
 
-const baseURL = "http://localhost:3000/" //'http://be747dfd.ngrok.io/
+const baseURL = "http://be747dfd.ngrok.io/" //'http://be747dfd.ngrok.io/
 
 
 const styleMap = {
@@ -209,7 +209,7 @@ class MyEditor extends React.Component {
     this.previousHighlight = null; //means you dont have a selection/highlight but can still ahv ea cursor
 
     //doing socket stuff over the constructur but can also do componentdid mount.... but constructor hapepsn before the didmount
-    this.socket = io.connect('http://localhost:3000')//"http://localhost:3000")//)//http://be747dfd.ngrok.io
+    this.socket = io.connect('http://be747dfd.ngrok.io')//"http://localhost:3000")//)//http://be747dfd.ngrok.io
 
 //listen for a response from server to confirm your entry to this room
     this.socket.on('welcome', ({doc})=> {
@@ -226,7 +226,7 @@ class MyEditor extends React.Component {
 
 //listen for new content and update content state
     this.socket.on('receivedNewContent', stringifiedContent => {
-        console.log('received new content going to update state');
+        // console.log('received new content going to update state');
         const contentState = convertFromRaw(JSON.parse(stringifiedContent))
         const newEditorState = EditorState.createWithContent(contentState)
         this.setState({editorState: newEditorState})
@@ -234,7 +234,7 @@ class MyEditor extends React.Component {
     })
 
     this.socket.on('receiveNewCursor', incomingSelectionObj => {
-        // console.log('user has reeived cursor move');
+        // console.log('in receive new cursor');
         let editorState = this.state.editorState;
         const originalEditorState = editorState;
         const originalSelection = editorState.getSelection();
@@ -242,29 +242,64 @@ class MyEditor extends React.Component {
 
         //take the original selection stateand change all its values to be the selectionstateobj  that we just received
         const incomingSelectionState = originalSelection.merge(incomingSelectionObj)
-
+        // console.log('incomign selection state is ', incomingSelectionObj, incomingSelectionState.getStartOffset(), incomingSelectionState.getEndOffset());
         const temporaryEditorState = EditorState.forceSelection(originalEditorState, incomingSelectionState)
 
         if(temporaryEditorState) {
+            // console.log('received cursor move');
             // console.log('temporaryEditorState nto undefined ', temporaryEditorState);
             this.setState({editorState: temporaryEditorState}, function() {
                 //were now referring to browser selectionstateobjc
                 const windowSelection = window.getSelection();
+                console.log('window selection was ', windowSelection);
                 if(windowSelection.rangeCount>0){
-                  console.log('recievedcursor');
-                    // console.log('window selection shoudlnt be unfeined in rangecount', windowSelection);
-                    const range = windowSelection.getRangeAt(0); //cursor wil always be a single range so u can just ge tthe first range in the array
 
-                    const rects = range.getClientRects()[0];
 
-                    const {top, left, bottom} = rects;
-                    this.setState({editorState: originalEditorState, top, left, height: bottom - top})
+                    const range = windowSelection.getRangeAt(0);
+                    const clientRects = range.getClientRects()
+                    console.log('client rects length ', clientRects);
+                    if(clientRects.length > 0) {
+                        const rects = clientRects[0];//cursor wil always be a single range so u can just ge tthe first range in the array
+                        const {top, left, bottom} = rects;
+                        this.setState({editorState: originalEditorState, top, left, height: bottom - top})
+                    }
                 }
             })
         } else {
             console.log('temportaray state undefined wtf');
         }
 
+    })
+    this.socket.on('testrecieve', (data) => {
+        console.log('in testreceive new cursor');
+        const incomingSelectionObj = data.incomingSelectionObj
+        const loc = data.loc
+        let editorState = this.state.editorState;
+        const originalEditorState = editorState;
+        const originalSelection = this.state.editorState.getSelection();
+        //move my cursor to be incoming selection ObjectId
+
+        //take the original selection stateand change all its values to be the selectionstateobj  that we just received
+        const incomingSelectionState = originalSelection.merge(incomingSelectionObj)
+        // console.log('incomign selection state is ', incomingSelectionObj, incomingSelectionState.getStartOffset(), incomingSelectionState.getEndOffset());
+        const temporaryEditorState = EditorState.forceSelection(originalEditorState, incomingSelectionState)
+
+        if(temporaryEditorState) {
+            // console.log('received cursor move');
+            // console.log('temporaryEditorState nto undefined ', temporaryEditorState);
+            console.log('inside testrecieve tempstate');
+            this.setState({editorState: temporaryEditorState}, function() {
+                //were now referring to browser selectionstateobjc
+                console.log('inside testrecieve set state');
+                if(loc && loc.top && loc.bottom && loc.left) {
+                    console.log('inside testrecieve loc');
+                    this.setState({editorState: originalEditorState, top: loc.top, left: loc.left, height: loc.bottom - loc.top})
+                }
+
+            })
+        } else {
+            console.log('temportaray state undefined wtf');
+        }
     })
 
     //emit a joined message to everyone else also in the same document, send the document id of what u are trying to join
@@ -315,13 +350,13 @@ class MyEditor extends React.Component {
   //   });
   // }
   onChange(editorState) {
+  //  console.log(this.previousHighlight);
       this.setState({editorState: editorState, saved: false})
 
       //save current selection
       const selection = editorState.getSelection() //refers to most up to date selection and save it
       //if i have a previous highlight,
       if(this.previousHighlight){ //if i have an old selection, then  change editorstate to be the result of
-
           //accept selection changes the editorstate to have the previous highlight selection- turn off where the old highlight was,
           editorState = EditorState.acceptSelection(editorState, this.previousHighlight)
           //switch to old editorstate
@@ -335,23 +370,85 @@ class MyEditor extends React.Component {
       editorState = RichUtils.toggleInlineStyle(editorState, 'RED');
       this.previousHighlight = editorState.getSelection(); //set previous heighlight  to be newest selection, if theres no new highlight this seems to not even  happen
 
+
+    //   console.log('selection is ', selection, selection.getStartOffset(), selection.getEndOffset());
       //DETECTING CURSOR VERSUS HIGHLIGHT: if your cursor is only in one spot and not highlighting anything then this is not a highlight
 
 
       //DETECTING CURSOR VERSUS HIGHLIGHT: if your cursor is only in one spot and not highlighting anything then this is not a highlight
-      if(selection.getStartOffset() === selection.getEndOffset()){
-        //only emit a cursor event if it took place in the editor (dont emit an event where user has clicked somewhere out of the screen)
-            if(selection._map._root.entries[5][1]){
-                this.socket.emit('cursorMove', selection)
-            }
-      }
+      // if(selection.getStartOffset() === selection.getEndOffset()){
+      //   //only emit a cursor event if it took place in the editor (dont emit an event where user has clicked somewhere out of the screen)
+      //       if(selection._map._root.entries[5][1]){
+      //           // console.log('emitting cursor moving', selection);
+      //           this.socket.emit('cursorMove', selection)
+      //       }
+      // } else {
+      //     console.log('it was a hgihlight');
+      // }
 
       // this.setState({editorState: editorState, saved: false})
 
       var currentContent = convertToRaw(editorState.getCurrentContent()); //returns content state out of the editor state
       this.socket.emit('newContent', JSON.stringify(currentContent)); //emit a newcontent event
 
+      if(selection.getStartOffset() === selection.getEndOffset()){
+        //only emit a cursor event if it took place in the editor (dont emit an event where user has clicked somewhere out of the screen)
+            console.log('inside compare selection');
+            if(selection._map._root.entries[5][1]){
+                // console.log('emitting cursor moving', selection);
+                console.log('inside selecton map if');
+                const windowSelection = window.getSelection();
+                if(windowSelection.rangeCount>0){
+                    console.log('inside window range');
+                    const range = windowSelection.getRangeAt(0);
+                    const clientRects = range.getClientRects()
+                    console.log("REG RECTS", clientRects);
+                    console.log("BOUNDING", range.getBoundingClientRect());
+                    // console.log('CLIENT RECTS ', clientRects);
+                    if(clientRects.length > 0) {
 
+                        console.log('inside clientRects');
+                        const rects = clientRects[0];//cursor wil always be a single range so u can just ge tthe first range in the array
+                        const {top, left, bottom} = rects;
+                        const loc = {top: rects.top, bottom: rects.bottom, left: rects.left}
+                        const data = {incomingSelectionObj: selection, loc: loc}
+                        console.log('about to emit testsend');
+                        this.socket.emit('testsend', data)
+                        //
+                        // this.setState({editorState: originalEditorState, top, left, height: bottom - top})
+                    }
+                }
+    //             var sel = document.selection, range;
+    // var width = 0, height = 0;
+    // if (sel) {
+    //     if (sel.type != "Control") {
+    //         range = sel.createRange();
+    //         width = range.boundingWidth;
+    //         height = range.boundingHeight;
+    //     }
+    // } else if (window.getSelection) {
+    //     sel = window.getSelection();
+    //     if (sel.rangeCount) {
+    //         range = sel.getRangeAt(0).cloneRange();
+    //         if (range.getBoundingClientRect) {
+    //             var rect = range.getBoundingClientRect();
+    //             width = rect.right - rect.left;
+    //             height = rect.bottom - rect.top;
+    //         }
+    //     }
+    // }
+                // if(clientRects.length > 0) {
+                //     const rects = clientRects[0];//cursor wil always be a single range so u can just ge tthe first range in the array
+                //     const {top, left, bottom} = rects;
+                //     // this.setState({editorState: originalEditorState, top, left, height: bottom - top})
+                // }
+
+
+                //this.socket.emit('cursorMove', selection)
+            }
+      } else {
+          console.log('it was a hgihlight');
+      }
 
 
       // var selectionState = editorState.getSelection();
@@ -588,7 +685,6 @@ class MyEditor extends React.Component {
   }
 
 
-
   onSave(){
     var newContent = JSON.stringify(convertToRaw(this.state.editorState.getCurrentContent()));
     // console.log('content that is being saved is ', newContent);
@@ -735,7 +831,7 @@ class MyEditor extends React.Component {
             open={this.state.alertOpen}
             >You have unsaved changes! Click save to prevent your changes from being lost!</Dialog>
 
-
+            {/* <div>{'user is '+this.props.store.get('user').name}</div> */}
             <div className="docContainer">
               {/*  <div className='documentControls'>
               <div style={{display:'flex', flexDirection: 'row'}} > */}
