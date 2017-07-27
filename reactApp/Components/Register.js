@@ -10,7 +10,7 @@ import 'draft-js/dist/Draft.css';
 const style = {
   margin: 12,
 };
-
+const baseURL = 'http://be747dfd.ngrok.io/'
 export default class Register extends React.Component {
   constructor(props) {
     super(props);
@@ -23,7 +23,7 @@ export default class Register extends React.Component {
     };
   }
   handleSubmit(){
-    fetch('http://localhost:3000/register', {
+    fetch(baseURL+'register', {
       method: 'POST',
       credentials: 'include',
       headers: {
