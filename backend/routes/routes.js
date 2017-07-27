@@ -47,7 +47,7 @@ router.get('/documents/all/:userId', function(req,res) {
                     res.status(500).json({success: false, message: 'Unable to get user information'})
                 } else{
                     if(documents) {
-                        console.log('documents found ', documents);
+                        // console.log('documents found ', documents);
                         res.status(200).json({success: true, documents: documents});
                     } else {
                         console.log('user foudn but had no docuemtns');

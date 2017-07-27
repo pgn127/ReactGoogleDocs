@@ -10,8 +10,14 @@ const MongoStore = require('connect-mongo/es5')(session);
 const routes = require('./routes/routes');
 const auth = require('./routes/auth');
 const mongoose = require('mongoose');
-const app = express()
 const models = require('./models/models.js')
+const app = express()
+const server = require('http').createServer(app); //make a http server to use for the sockets
+const io = require('socket.io')(server);
+//can add event handlers to this
+
+
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(expressValidator());
@@ -78,30 +84,73 @@ mongoose.connection.on('error', function() {//error connecting
 });
 mongoose.connect(process.env.MONGODB_URI);
 
-const server = app.listen(3000, function () {
+
+// const server = app.listen(3000, function () {
+//   console.log('Backend server for Electron App running on port 3000!')
+// })
+// const io = require('socket.io')(server);
+server.listen(3000, function () {
   console.log('Backend server for Electron App running on port 3000!')
 })
-const io = require('socket.io')(server);
+
 
 io.on('connection', (socket) => {
-  console.log('a user connected');
+  // console.log('a user connected');
 
+//CODEALONG
+  //listen for joined events when users enter
+  socket.on('joined', ({doc}) => {
+      console.log('user has joined a room', doc);
+      socket.emit('welcome', {doc}) //emit back to the sending user
+      socket.join(doc) //give join the string name of the room, this joins that room
+      socket.documentRoom = doc; //create a new key on the socket object with information you want to be accessible in all the handlers
+
+      //broadcast a userjoined event to everyone but sender that is in the room named doc
+      socket.broadcast.to(doc).emit('userjoined')
+
+  })
+
+
+//CODEALONG
+socket.on('newContent', stringifiedContent => {
+    // console.log('received new content about to emit receivednewcontent');
+    socket.broadcast.to(socket.documentRoom).emit('receivedNewContent', stringifiedContent)
+})
+
+socket.on('cursorMove', selection => {
+    // console.log('selection',selection);
+    console.log('received cursormove');
+    socket.broadcast.to(socket.documentRoom).emit('receiveNewCursor', selection)
+})
+
+//CODEALONG
+//this will get called when disconnect is dispatched, do cleanup here
+//when people leave the pagethis is where you are notified
   socket.on('disconnect', () => {
     console.log('user disconnected');
+    socket.leave(socket.documentRoom) //leave the room, get the doc from the key we stored on the socket
+    socket.broadcast.to(socket.documentRoom).emit('userleft') //emit to all other users in room that user has left
   });
 
+
+
+//-------------
+
+
+//someone joined the room
   socket.on('room', (data) => {
-    console.log(data, 'joined');
-    socket.join(data);
-    console.log(io.nsps['/'].adapter.rooms[data].length);
-    if(io.nsps['/'].adapter.rooms[data].length >= 6){
-      socket.emit('redirect');
-    }
+    console.log('joined room on room socket listener');
+    // socket.join(data);
+    // console.log(io.nsps['/'].adapter.rooms[data].length);
+    // if(io.nsps['/'].adapter.rooms[data].length >= 6){
+    //   socket.emit('redirect');
+    // }
   });
 
   socket.on('cursor', (data) => {
-    console.log(data);
-    socket.broadcast.to(data.room).emit('update', data);
+    // console.log(data);
+    console.log('about to broadcast update event');
+    // socket.broadcast.to(data.room).emit('update', data);
   });
 
   socket.on('limit', () => {
