@@ -16,6 +16,7 @@ import Dialog from 'material-ui/Dialog';
 import FlatButton from 'material-ui/FlatButton';
 import TextField from 'material-ui/TextField';
 
+const baseURL = 'http://localhost:3000'
 class Directory extends React.Component {
   constructor(props){
     super(props);
@@ -48,7 +49,7 @@ class Directory extends React.Component {
       this.ownedByAll()
   }
   logout(){
-    fetch('http://localhost:3000/logout')
+    fetch(baseURL+'/logout')
     .then((response) => {
       return response.json()
     })
@@ -104,7 +105,7 @@ class Directory extends React.Component {
 
   ownedByAll(){
     console.log(this.state.user._id);
-    fetch('http://localhost:3000/documents/all/'+ this.state.user._id)
+    fetch(baseURL+'/documents/all/'+ this.state.user._id)
     .then((response) => {
       return response.json()
     })
@@ -119,7 +120,7 @@ class Directory extends React.Component {
 
 
   ownedByMe(){
-    fetch('http://localhost:3000/documents/owned/'+ this.state.user._id)
+    fetch(baseURL+'/documents/owned/'+ this.state.user._id)
     .then((response) => {
       return response.json()
     })
@@ -204,7 +205,7 @@ class Directory extends React.Component {
   newDocument(){
     //   this.props.store.get('userId')
     console.log('this.state.user is ', this.state.user);
-    fetch('http://localhost:3000/documents/new/' + this.state.user._id, {
+    fetch(baseURL+'/documents/new/' + this.state.user._id, {
         method: 'POST',
         headers: {
             "Content-Type": "application/json"

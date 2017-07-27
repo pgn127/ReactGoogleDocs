@@ -165,61 +165,120 @@ router.post('/documents/add/collaborator/:documentId', function(req, res){
     // collaboratorEmails.push(req.body.collaboratorEmails)
     var collaboratorEmails = req.body.collaboratorEmails; //TODO: make it so that req.body.collaborators comes in already as an array of email strings
     console.log('collaboratorEmails  from bod ', collaboratorEmails, 'with type ', typeof collaboratorEmails);
-    Document.findById(docId, function(err, doc) {
-        if(err){
-            console.log('error finding document in the add collaborators', err);
-            res.status(500).json({err: err})
-        } else{
-            if(doc) {
-                console.log('doc found ', doc);
-                const currentCollaborators = doc.collaborators;
-                User.find({email: { $in: collaboratorEmails}}, function(err, users){
-                    console.log('enet4ed user find collaborat emails are ', collaboratorEmails);
-                    if(err){
-                        console.log('error funding users with those emails ', err);
-                        res.status(500).json({success: false, error: err})
-                    } else {
-                        if(users && users.length>0){
-                            console.log('users were found ', users);
-                            users.forEach((user) => {
-                                console.log('looking at user ', user);
-                                var userRef = mongoose.Types.ObjectId(user._id);
-                                var alreadyExists = currentCollaborators.some((collaborator) => {
-                                    console.log('checking if ', userRef, 'matches ', collaborator);
-                                    return JSON.stringify(collaborator) === JSON.stringify(userRef)
-                                })
-                                console.log('alreadyExists for the the user ref ', userRef, 'is ', alreadyExists);
-                                if(!alreadyExists) {
-                                    currentCollaborators.push(userRef)
-                                }
-
-                                doc.title = doc.title;
-                                doc.content = doc.content;
-                                doc.collaborators = currentCollaborators;
-                                doc.password = doc.password;
-                                doc.save(function(err, updatedDoc) {
-                                    if(err){
-                                        console.log('error saving doc after added collabs', err);
-                                        res.status(400).json({success: false, error: err})
-                                    } else {
-                                        console.log('successful ADD collabs', updatedDoc);
-                                        res.status(200).json({success: true, document: updatedDoc}) //if document update is successful, send successful response with the document
-                                    }
-                                })
+    Document.findById(docId)
+    // .populate('collaborators')
+    .populate('author')
+    .exec()
+    .then((doc) => {
+        if(doc) {
+            console.log('doc found ', doc);
+            const currentCollaborators = doc.collaborators;
+            User.find({email: { $in: collaboratorEmails}}, function(err, users){
+                console.log('enet4ed user find collaborat emails are ', collaboratorEmails);
+                if(err){
+                    console.log('error funding users with those emails ', err);
+                    res.status(500).json({success: false, error: err})
+                } else {
+                    if(users && users.length>0){
+                        console.log('users were found ', users);
+                        users.forEach((user) => {
+                            console.log('looking at user ', user);
+                            var userRef = mongoose.Types.ObjectId(user._id);
+                            var alreadyExists = currentCollaborators.some((collaborator) => {
+                                console.log('checking if ', userRef, 'matches ', collaborator);
+                                return JSON.stringify(collaborator) === JSON.stringify(userRef)
                             })
-                        } else {
-                            console.log('couldnt find any users with those emails ');
-                            res.status(400).json({success: false})
-                        }
-                    }
-                });
-            } else {
-                console.log('document not found, cant update', err);
-                res.status(500).json({success: false, error: err})
-            }
+                            console.log('alreadyExists for the the user ref ', userRef, 'is ', alreadyExists);
+                            if(!alreadyExists) {
+                                currentCollaborators.push(userRef)
+                            }
 
+                            doc.title = doc.title;
+                            doc.content = doc.content;
+                            doc.collaborators = currentCollaborators;
+                            doc.password = doc.password;
+                            doc.save(function(err, updatedDoc) {
+                                if(err){
+                                    console.log('error saving doc after added collabs', err);
+                                    res.status(400).json({success: false, error: err})
+                                } else {
+                                    console.log('successful ADD collabs', updatedDoc);
+                                    res.status(200).json({success: true, document: updatedDoc}) //if document update is successful, send successful response with the document
+                                }
+                            })
+                        })
+                    } else {
+                        console.log('couldnt find any users with those emails ');
+                        res.status(400).json({success: false})
+                    }
+                }
+            });
+        } else {
+            console.log('document not found, cant update 1', err);
+            res.status(500).json({success: false, error: err})
         }
+
     })
+    .catch((err) => {
+        console.log('document not found, cant update 2', err);
+        res.status(500).json({success: false, error: err})
+    })
+
+    // Document.findById(docId, function(err, doc) {
+    //     if(err){
+    //         console.log('error finding document in the add collaborators', err);
+    //         res.status(500).json({err: err})
+    //     } else{
+    //         if(doc) {
+    //             console.log('doc found ', doc);
+    //             const currentCollaborators = doc.collaborators;
+    //             User.find({email: { $in: collaboratorEmails}}, function(err, users){
+    //                 console.log('enet4ed user find collaborat emails are ', collaboratorEmails);
+    //                 if(err){
+    //                     console.log('error funding users with those emails ', err);
+    //                     res.status(500).json({success: false, error: err})
+    //                 } else {
+    //                     if(users && users.length>0){
+    //                         console.log('users were found ', users);
+    //                         users.forEach((user) => {
+    //                             console.log('looking at user ', user);
+    //                             var userRef = mongoose.Types.ObjectId(user._id);
+    //                             var alreadyExists = currentCollaborators.some((collaborator) => {
+    //                                 console.log('checking if ', userRef, 'matches ', collaborator);
+    //                                 return JSON.stringify(collaborator) === JSON.stringify(userRef)
+    //                             })
+    //                             console.log('alreadyExists for the the user ref ', userRef, 'is ', alreadyExists);
+    //                             if(!alreadyExists) {
+    //                                 currentCollaborators.push(userRef)
+    //                             }
+    //
+    //                             doc.title = doc.title;
+    //                             doc.content = doc.content;
+    //                             doc.collaborators = currentCollaborators;
+    //                             doc.password = doc.password;
+    //                             doc.save(function(err, updatedDoc) {
+    //                                 if(err){
+    //                                     console.log('error saving doc after added collabs', err);
+    //                                     res.status(400).json({success: false, error: err})
+    //                                 } else {
+    //                                     console.log('successful ADD collabs', updatedDoc);
+    //                                     res.status(200).json({success: true, document: updatedDoc}) //if document update is successful, send successful response with the document
+    //                                 }
+    //                             })
+    //                         })
+    //                     } else {
+    //                         console.log('couldnt find any users with those emails ');
+    //                         res.status(400).json({success: false})
+    //                     }
+    //                 }
+    //             });
+    //         } else {
+    //             console.log('document not found, cant update', err);
+    //             res.status(500).json({success: false, error: err})
+    //         }
+    //
+    //     }
+    // })
 })
 //triggered when you click save on a document
 //req.body should contain the fields to update

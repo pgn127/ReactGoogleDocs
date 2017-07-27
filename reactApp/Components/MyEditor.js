@@ -24,6 +24,7 @@ var Mousetrap = require('mousetrap');
 
 import io from 'socket.io-client'
 const socket = io.connect("http://localhost:3000");
+const baseURL = 'http://localhost:3000'
 
 const styleMap = {
   'BOLD': {
@@ -196,6 +197,7 @@ class MyEditor extends React.Component {
   }
 
 
+
   //USED FOR BOLD, and styles supported by FontStyles.js
   _toggleInlineStyle(inlineStyle) {
     this.onChange( RichUtils.toggleInlineStyle(this.state.editorState,inlineStyle));
@@ -230,21 +232,73 @@ class MyEditor extends React.Component {
     var newStyleMap = Object.assign({}, this.state.styleMap, {'FONT-SIZE': {
       fontSize: newFontSize
     }});
-    this.setState({styleMap: newStyleMap}, () => {
-      this.state.styleMap['FONT-SIZE-' + fontSize.toString()] = {
-        fontSize: newFontSize
-      };
-      console.log(this.state.styleMap);
-      this.onChange(RichUtils.toggleInlineStyle(
-        this.state.editorState,
-        'FONT-SIZE-' + (fontSize - 2).toString()
-      ));
-      this.onChange(RichUtils.toggleInlineStyle(
-        this.state.editorState,
-        'FONT-SIZE-' + fontSize.toString()
-      ));
-    });
-  }
+      this.setState({styleMap: newStyleMap}, () => {
+        this.state.styleMap['FONT-SIZE-' + fontSize.toString()] = {
+          fontSize: newFontSize
+        };
+        console.log(this.state.styleMap);
+        this.onChange(RichUtils.toggleInlineStyle(
+          this.state.editorState,
+           'FONT-SIZE-' + (fontSize + 2).toString()
+        ));
+        this.onChange(RichUtils.toggleInlineStyle(
+          this.state.editorState,
+           'FONT-SIZE-' + fontSize.toString()
+        ));
+      });
+    }
+
+    onFontColorClick(fontColor) {
+     var hex = fontColor.hex;
+     this.state.styleMap['FONT-COLOR-' + hex] = {
+        'color': hex
+     };
+     this.onChange(RichUtils.toggleInlineStyle(
+       this.state.editorState,
+       'FONT-COLOR-' + hex
+     ));
+    }
+
+    _onTab(e) {
+        const maxDepth = 8;
+        this.onChange(RichUtils.onTab(e, this.state.editorState, maxDepth));
+    }
+
+
+    onSave(){
+        var newContent = JSON.stringify(convertToRaw(this.state.editorState.getCurrentContent()));
+        // console.log('content that is being saved is ', newContent);
+        var newTitle = this.state.title;
+        fetch(baseURL+'/documents/save/'+this.props.match.params.docId, {
+            method: 'POST',
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                content: newContent,
+                title: newTitle,
+                //   password: newPassword,
+                //   collaborators: newCollaborators
+
+            })
+        })
+        .then((response) => {
+          console.log('response in on save ', response);
+            return response.json()
+        })
+        .then((resp) => {
+            console.log("saved document", resp.document);
+            const contentState = JSON.stringify(convertToRaw(this.state.editorState.getCurrentContent()));
+            var rawContent = this.state.editorState.getCurrentContent();
+            var currentDocument = Object.assign({}, resp.document, {content: rawContent})
+
+            this.setState({saved: true, currentDocument: currentDocument, title: newTitle, editorState: EditorState.createWithContent(rawContent) })
+        })
+        .catch((err)=>console.log('error saving doc', err))
+        //   console.log('the current document to save is ', this.state.currentDocument);
+    }
+
+
 
   onFontSizeDecreaseClick() {
     var font = this.state.styleMap['FONT-SIZE']['fontSize'];
@@ -287,6 +341,7 @@ class MyEditor extends React.Component {
   }
 
 
+
   onSave(){
     var newContent = JSON.stringify(convertToRaw(this.state.editorState.getCurrentContent()));
     // console.log('content that is being saved is ', newContent);
@@ -322,6 +377,7 @@ class MyEditor extends React.Component {
   onAlertOpen() {
     this.setState({alertOpen: !this.state.saved});
   }
+
 
   onCollabSubmit() {
     console.log("DOCID", this.props.match.params.docId);
@@ -388,71 +444,6 @@ class MyEditor extends React.Component {
         )
       }
       return (
-        // <div >
-        //     <AppBar
-        //         title={
-        //             <TextField id="text-field-controlled" inputStyle={this.state.title === 'Untitled Document' ? {color: 'white', fontStyle: 'italic'}: {color: 'white'}} underlineShow={false} value={this.state.title} onChange={this.onTitleEdit.bind(this)} />}
-        //         onLeftIconButtonTouchTap={this.state.saved ? this.onAlertOk.bind(this): this.onAlertOpen.bind(this)}
-        //     />
-        //     <Dialog
-        //         title="Add Collaborators by email"
-        //         modal={true}
-        //         open={this.state.collabModalOpen}
-        //     > <div>To add a new collaborator, type in an email and press enter</div>
-        //         <form className="commentForm" onSubmit={this.onCollabSubmit.bind(this)}>
-        //             <div>
-        //                 {this.state.newCollaborators.map((collab) => <p>{collab}</p>)}
-        //             </div>
-        //             <input
-        //                 type="text"
-        //                 placeholder="collaborator"
-        //                 value={this.state.newCollaborator}
-        //                 onKeyDown={(e) => {
-        //                     if(e.key === 'Enter'){
-        //                         e.preventDefault()
-        //                         var updatedCollaborators = this.state.newCollaborators.concat([this.state.newCollaborator]);
-        //                         this.setState({newCollaborator: '', newCollaborators: updatedCollaborators})
-        //                     }
-        //                 }}
-        //                 onChange={(e) => this.setState({newCollaborator: e.target.value})}
-        //             />
-        //             <div style={{ textAlign: 'right', padding: 8, margin: '24px -24px -24px -24px' }}>
-        //                 {[<FlatButton label="Cancel" primary={true} onClick={() => this.onCollabClose()}/>,
-        //                     <FlatButton type="submit" label="Submit" primary={true}/>,
-        //                 ]}
-        //             </div>
-        //         </form>
-        //     </Dialog>
-        //     <Dialog
-        //         title="Changes not saved!"
-        //         actions={actions}
-        //         modal={true}
-        //         open={this.state.alertOpen}
-        //     >You have unsaved changes! Click save to prevent your changes from being lost!</Dialog>
-        //
-        //
-        //     <div className="docContainer">
-        //         <div className='documentControls'>
-        //
-        //
-        //             <div className="rightSideControls">
-        //                 {/* <span style={{display: 'flex', alignSelf: 'center'}}>Shared with:</span>
-        //                     <List style={{paddingLeft: '15px', paddingRight: '10px'}}>
-        //                     {this.state.collaborators.map((user, i) => (
-        //                         <span key={i} className="collaboratorIcon" style={{backgroundColor: randomColor()}}>{user.name.slice(0,1)}</span>
-        //
-        //                     ))}
-        //
-        //                 </List>  */}
-        //
-        //                 <RaisedButton
-        //                     label={this.state.saved ? "Saved" : "Save"}
-        //                     style={{margin: 5}}
-        //                     primary={true}
-        //                     disabled={this.state.saved}
-        //                     onTouchTap={this.onSave.bind(this)}/>
-        //             </div>
-
 
         <div >
           <AppBar
