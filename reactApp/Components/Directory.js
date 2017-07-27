@@ -17,6 +17,7 @@ import FlatButton from 'material-ui/FlatButton';
 import TextField from 'material-ui/TextField';
 
 const baseURL = 'http://be747dfd.ngrok.io'//'http://be747dfd.ngrok.io'//
+
 class Directory extends React.Component {
   constructor(props){
     super(props);
@@ -273,6 +274,7 @@ class Directory extends React.Component {
         <Redirect to={"/editor/"+this.state.newDocId} />
       )
   }else if(this.state.selectedDoc.userPermitted){
+    console.log("reffff", this.props.store.get('user'))
       return (
         <Redirect to={"/editor/"+this.state.selectedDoc.id} />
       )

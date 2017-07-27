@@ -52,6 +52,11 @@ const styleMap = {
   },
   'TEXT-ALIGN-RIGHT': {
     'textAlign': 'right'
+  },
+  'RED': {
+    backgroundColor:
+    'red'
+
   }
 };
 
@@ -66,6 +71,8 @@ const blockRenderMap = Map({
     element: 'div'
   }
 });
+
+const colors = ['red', 'orange', 'yellow', 'green', 'blue', 'violet']
 
 // Include 'paragraph' as a valid block and updated the unstyled element but
 // keep support for other draft default block types
@@ -166,6 +173,7 @@ class MyEditor extends React.Component {
       autosave: false,
       collabModalOpen: false,
       newCollaborators: [],
+      online: [],
       newCollaborator: '',
       styleMap: {
         'BOLD': {
@@ -191,11 +199,11 @@ class MyEditor extends React.Component {
         },
         'TEXT-ALIGN-RIGHT': {
           'textAlign': 'right'
-      },
-      'RED': {
+        },
+        'RED': {
           backgroundColor:
           'red'
-      }
+        }
       },
       room: ""
     };
@@ -208,33 +216,49 @@ class MyEditor extends React.Component {
     this.focus = () => this.refs.editor.focus();
     this.previousHighlight = null; //means you dont have a selection/highlight but can still ahv ea cursor
 
-    //doing socket stuff over the constructur but can also do componentdid mount.... but constructor hapepsn before the didmount
+
     this.socket = io.connect('http://be747dfd.ngrok.io')//"http://localhost:3000")//)//http://be747dfd.ngrok.io
 
-//listen for a response from server to confirm your entry to this room
-    this.socket.on('welcome', ({doc})=> {
-        console.log('you have just joined the room ', doc);
+    // this.socket = io.connect('http://be747dfd.ngrok.io')
+
+    //listen for a response from server to confirm your entry to this room
+    this.socket.on('welcome', ({doc}) => {
+      console.log("User");
+
     })
-//listen for userjoined events for this room/documents
-    this.socket.on('userjoined', () => {
-        console.log('use rhas joined the room');
+    //listen for userjoined events for this room/documents
+    this.socket.on('userjoined', ({online}) => {
+      console.log('user has joined the room');
+
     })
 
-    this.socket.on('userleft', () => {
-        console.log('user has left');
+    this.socket.on('onlineUpdated', ({online}) => {
+      console.log('onlineUpdated', online);
+      this.setState({online: online});
     })
 
-//listen for new content and update content state
+    this.socket.on('userleft', (data) => {
+      console.log('user has left');
+    })
+
+    this.socket.on('redirect', () => {
+        alert("Full");
+        this.props.history.push('/directory');
+    });
+
+    //listen for new content and update content state
     this.socket.on('receivedNewContent', stringifiedContent => {
-        // console.log('received new content going to update state');
-        const contentState = convertFromRaw(JSON.parse(stringifiedContent))
-        const newEditorState = EditorState.createWithContent(contentState)
-        this.setState({editorState: newEditorState})
+      // console.log('received new content going to update state');
+      const contentState = convertFromRaw(JSON.parse(stringifiedContent))
+      const newEditorState = EditorState.createWithContent(contentState)
+      this.setState({editorState: newEditorState})
 
     })
 
-    this.socket.on('receiveNewCursor', incomingSelectionObj => {
-        // console.log('in receive new cursor');
+    this.socket.on('receiveNewCursor', (data) => {
+        // console.log('in receive of cursor mvoemnt');
+        const incomingSelectionObj = data.incomingSelectionObj
+        const loc = data.loc
         let editorState = this.state.editorState;
         const originalEditorState = editorState;
         const originalSelection = editorState.getSelection();
@@ -246,24 +270,29 @@ class MyEditor extends React.Component {
         const temporaryEditorState = EditorState.forceSelection(originalEditorState, incomingSelectionState)
 
         if(temporaryEditorState) {
-            // console.log('received cursor move');
-            // console.log('temporaryEditorState nto undefined ', temporaryEditorState);
             this.setState({editorState: temporaryEditorState}, function() {
                 //were now referring to browser selectionstateobjc
-                const windowSelection = window.getSelection();
-                console.log('window selection was ', windowSelection);
-                if(windowSelection.rangeCount>0){
 
+                // const windowSelection = window.getSelection();
+                // console.log('window selection was ', windowSelection);
+                // if(windowSelection.rangeCount>0){
+                //
+                //
+                //     const range = windowSelection.getRangeAt(0);
+                //     const clientRects = range.getClientRects()
+                //     console.log('client rects length ', clientRects);
+                //     if(clientRects.length > 0) {
+                //         const rects = clientRects[0];//cursor wil always be a single range so u can just ge tthe first range in the array
+                //         const {top, left, bottom} = rects;
+                //         this.setState({editorState: originalEditorState, top, left, height: bottom - top})
+                //     }
 
-                    const range = windowSelection.getRangeAt(0);
-                    const clientRects = range.getClientRects()
-                    console.log('client rects length ', clientRects);
-                    if(clientRects.length > 0) {
-                        const rects = clientRects[0];//cursor wil always be a single range so u can just ge tthe first range in the array
-                        const {top, left, bottom} = rects;
-                        this.setState({editorState: originalEditorState, top, left, height: bottom - top})
-                    }
+                if(loc && loc.top && loc.bottom && loc.left) {
+                    // console.log('location received was not null, about to move other users curosr', loc);
+                    this.setState({editorState: originalEditorState, top: loc.top, left: loc.left, height: loc.bottom - loc.top})
+
                 }
+
             })
         } else {
             console.log('temportaray state undefined wtf');
@@ -302,8 +331,13 @@ class MyEditor extends React.Component {
         }
     })
 
+
     //emit a joined message to everyone else also in the same document, send the document id of what u are trying to join
-    this.socket.emit('joined', {doc: this.props.match.params.docId})
+    this.socket.emit('joined', {doc: this.props.match.params.docId, user: this.props.store.get('user')});
+
+
+    //emit a joined message to everyone else also in the same document, send the document id of what u are trying to join
+    // this.socket.emit('joined', {doc: this.props.match.params.docId})
 
 
   }
@@ -371,7 +405,6 @@ class MyEditor extends React.Component {
       this.previousHighlight = editorState.getSelection(); //set previous heighlight  to be newest selection, if theres no new highlight this seems to not even  happen
 
 
-    //   console.log('selection is ', selection, selection.getStartOffset(), selection.getEndOffset());
       //DETECTING CURSOR VERSUS HIGHLIGHT: if your cursor is only in one spot and not highlighting anything then this is not a highlight
 
 
@@ -392,82 +425,92 @@ class MyEditor extends React.Component {
       this.socket.emit('newContent', JSON.stringify(currentContent)); //emit a newcontent event
 
       if(selection.getStartOffset() === selection.getEndOffset()){
+
         //only emit a cursor event if it took place in the editor (dont emit an event where user has clicked somewhere out of the screen)
             console.log('inside compare selection');
             if(selection._map._root.entries[5][1]){
+//MERGE
                 // console.log('emitting cursor moving', selection);
-                console.log('inside selecton map if');
+                // console.log('inside selecton map if');
+                // const windowSelection = window.getSelection();
+                // if(windowSelection.rangeCount>0){
+                //     console.log('inside window range');
+                //     const range = windowSelection.getRangeAt(0);
+                //     const clientRects = range.getClientRects()
+                //     console.log("REG RECTS", clientRects);
+                //     console.log("BOUNDING", range.getBoundingClientRect());
+                //     // console.log('CLIENT RECTS ', clientRects);
+                //     if(clientRects.length > 0) {
+                //
+                //         console.log('inside clientRects');
+//ENDMERGE
+                // console.log('this was a cursor movement', selection.getAnchorOffset(), selection._map._root.entries,window.getSelection());
+                if(window.getSelection().focusNode){
+                    console.log('focus node ', window.getSelection().focusNode.offsetTop);
+                }
+
+
                 const windowSelection = window.getSelection();
                 if(windowSelection.rangeCount>0){
-                    console.log('inside window range');
+                    // console.log('window selection rangecount >0');
                     const range = windowSelection.getRangeAt(0);
                     const clientRects = range.getClientRects()
-                    console.log("REG RECTS", clientRects);
-                    console.log("BOUNDING", range.getBoundingClientRect());
                     // console.log('CLIENT RECTS ', clientRects);
                     if(clientRects.length > 0) {
-
-                        console.log('inside clientRects');
+                        // console.log('client rects >0');
                         const rects = clientRects[0];//cursor wil always be a single range so u can just ge tthe first range in the array
                         const {top, left, bottom} = rects;
                         const loc = {top: rects.top, bottom: rects.bottom, left: rects.left}
                         const data = {incomingSelectionObj: selection, loc: loc}
-                        console.log('about to emit testsend');
-                        this.socket.emit('testsend', data)
+
+
+                        // console.log('about to emit cursor movement ');
+                        this.socket.emit('cursorMove', data)
                         //
                         // this.setState({editorState: originalEditorState, top, left, height: bottom - top})
                     }
+                    // this.socket.emit('cursorMove', selection)
                 }
-    //             var sel = document.selection, range;
-    // var width = 0, height = 0;
-    // if (sel) {
-    //     if (sel.type != "Control") {
-    //         range = sel.createRange();
-    //         width = range.boundingWidth;
-    //         height = range.boundingHeight;
-    //     }
-    // } else if (window.getSelection) {
-    //     sel = window.getSelection();
-    //     if (sel.rangeCount) {
-    //         range = sel.getRangeAt(0).cloneRange();
-    //         if (range.getBoundingClientRect) {
-    //             var rect = range.getBoundingClientRect();
-    //             width = rect.right - rect.left;
-    //             height = rect.bottom - rect.top;
-    //         }
-    //     }
-    // }
-                // if(clientRects.length > 0) {
-                //     const rects = clientRects[0];//cursor wil always be a single range so u can just ge tthe first range in the array
-                //     const {top, left, bottom} = rects;
-                //     // this.setState({editorState: originalEditorState, top, left, height: bottom - top})
-                // }
 
-
-                //this.socket.emit('cursorMove', selection)
             }
       } else {
           console.log('it was a hgihlight');
       }
 
+      // this.setState({editorState: editorState, saved: false})
 
-      // var selectionState = editorState.getSelection();
-      // var anchorKey = selectionState.getAnchorKey();
-      // // var currentContentBlock = currentContent.getBlockForKey(anchorKey);
-      // var start = selectionState.getStartOffset();
-      // var end = selectionState.getEndOffset();
-      // var selectedText = currentContentBlock.getText().slice(start, end);
+      var currentContent = convertToRaw(editorState.getCurrentContent()); //returns content state out of the editor state
+      this.socket.emit('newContent', JSON.stringify(currentContent)); //emit a newcontent event
 
-      // console.log("onChange", currentContent.getPlainText());
-      // console.log(start, end, selectedText);
-      // socket.emit('cursor', {
-      //   room: this.state.room,
-      //   start: start,
-      //   end: end,
-      //   selectedText: selectedText,
-      //   currentContent: currentContent
-      // });
   }
+
+  //to ensure something happens righ when component is about to get killed
+  componentWillUnmount() {
+
+    this.socket.emit('disconnect', {userLeft: this.props.store.get('user')});
+    this.socket.disconnect();
+
+    // console.log(1);
+    // var newOnline2 = this.state.online.slice();
+    // var index = 0;
+    // for(var i = 0; i < newOnline2.length; i++) {
+    //   if(newOnline2[i]._id === this.props.store.get('user')._id) {
+    //       index = i;
+    //   }
+    // }
+    // console.log(1, this.state.online);
+    // newOnline2.splice(index, 1);
+    // console.log(1, newOnline2);
+    // this.setState({online: newOnline2}, () => {
+    //   console.log("Left", this.state.online);
+    //   this.socket.emit('disconnect');
+    //   this.socket.disconnect();
+    // });
+
+
+
+  }
+
 
   // componentDidMount(){
   //
@@ -501,6 +544,7 @@ class MyEditor extends React.Component {
   //
   // }
 
+
   componentDidMount(){
     // socket.on('redirect', () => {
     //     alert("Full");
@@ -515,30 +559,30 @@ class MyEditor extends React.Component {
     fetch(baseURL+'documents/'+this.props.match.params.docId)
     .then((response) => {
 
-        return response.json()
+      return response.json()
     })
     .then((resp) => {
-        console.log("pulled doc", resp.document);
-        //if this document has no content dont overwrite empty editorState in the state
-        if(resp.document.content === ""){
-            console.log('document content was empty ');
-            this.setState({saved: false, currentDocument: resp.document, collaborators: resp.document.collaborators, title: resp.document.title});
+      console.log("pulled doc", resp.document);
+      //if this document has no content dont overwrite empty editorState in the state
+      if(resp.document.content === ""){
+        console.log('document content was empty ');
+        this.setState({saved: false, currentDocument: resp.document, collaborators: resp.document.collaborators, title: resp.document.title});
 
-        } else {
-            const contentState = convertFromRaw( JSON.parse(resp.document.content) ) ;
-            var currentDocument = Object.assign({}, resp.document, {content: contentState})
-            this.setState({saved: false, currentDocument: currentDocument, collaborators: currentDocument.collaborators, title: currentDocument.title, editorState: EditorState.createWithContent(contentState) })
+      } else {
+        const contentState = convertFromRaw( JSON.parse(resp.document.content) ) ;
+        var currentDocument = Object.assign({}, resp.document, {content: contentState})
+        this.setState({saved: false, currentDocument: currentDocument, collaborators: currentDocument.collaborators, title: currentDocument.title, editorState: EditorState.createWithContent(contentState) })
 
-            // socket.emit('room', currentDocument.title);
-            this.setState({room: currentDocument.title});
+        // socket.emit('room', currentDocument.title);
+        this.setState({room: currentDocument.title});
 
-        }
-        // console.log('document collaborators ', currentDocument.collaborators);
-        // this.setState({currentDocument: resp.document})
+      }
+      // console.log('document collaborators ', currentDocument.collaborators);
+      // this.setState({currentDocument: resp.document})
     })
     .catch((err)=>console.log('error pulling doc', err));
 
-}
+  }
 
 
 
@@ -576,71 +620,71 @@ class MyEditor extends React.Component {
     var newStyleMap = Object.assign({}, this.state.styleMap, {'FONT-SIZE': {
       fontSize: newFontSize
     }});
-      this.setState({styleMap: newStyleMap}, () => {
-        this.state.styleMap['FONT-SIZE-' + fontSize.toString()] = {
-          fontSize: newFontSize
-        };
-        console.log(this.state.styleMap);
-        this.onChange(RichUtils.toggleInlineStyle(
-          this.state.editorState,
-           'FONT-SIZE-' + (fontSize + 2).toString()
-        ));
-        this.onChange(RichUtils.toggleInlineStyle(
-          this.state.editorState,
-           'FONT-SIZE-' + fontSize.toString()
-        ));
-      });
-    }
+    this.setState({styleMap: newStyleMap}, () => {
+      this.state.styleMap['FONT-SIZE-' + fontSize.toString()] = {
+        fontSize: newFontSize
+      };
+      console.log(this.state.styleMap);
+      this.onChange(RichUtils.toggleInlineStyle(
+        this.state.editorState,
+        'FONT-SIZE-' + (fontSize + 2).toString()
+      ));
+      this.onChange(RichUtils.toggleInlineStyle(
+        this.state.editorState,
+        'FONT-SIZE-' + fontSize.toString()
+      ));
+    });
+  }
 
-    onFontColorClick(fontColor) {
-     var hex = fontColor.hex;
-     this.state.styleMap['FONT-COLOR-' + hex] = {
-        'color': hex
-     };
-     this.onChange(RichUtils.toggleInlineStyle(
-       this.state.editorState,
-       'FONT-COLOR-' + hex
-     ));
-    }
+  onFontColorClick(fontColor) {
+    var hex = fontColor.hex;
+    this.state.styleMap['FONT-COLOR-' + hex] = {
+      'color': hex
+    };
+    this.onChange(RichUtils.toggleInlineStyle(
+      this.state.editorState,
+      'FONT-COLOR-' + hex
+    ));
+  }
 
-    _onTab(e) {
-        const maxDepth = 8;
-        this.onChange(RichUtils.onTab(e, this.state.editorState, maxDepth));
-    }
+  _onTab(e) {
+    const maxDepth = 8;
+    this.onChange(RichUtils.onTab(e, this.state.editorState, maxDepth));
+  }
 
 
-    onSave(){
-        var newContent = JSON.stringify(convertToRaw(this.state.editorState.getCurrentContent()));
-        // console.log('content that is being saved is ', newContent);
-        var newTitle = this.state.title;
-        fetch(baseURL+'/documents/save/'+this.props.match.params.docId, {
-            method: 'POST',
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                content: newContent,
-                title: newTitle,
-                //   password: newPassword,
-                //   collaborators: newCollaborators
+  onSave(){
+    var newContent = JSON.stringify(convertToRaw(this.state.editorState.getCurrentContent()));
+    // console.log('content that is being saved is ', newContent);
+    var newTitle = this.state.title;
+    fetch(baseURL+'/documents/save/'+this.props.match.params.docId, {
+      method: 'POST',
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        content: newContent,
+        title: newTitle,
+        //   password: newPassword,
+        //   collaborators: newCollaborators
 
-            })
-        })
-        .then((response) => {
-          console.log('response in on save ', response);
-            return response.json()
-        })
-        .then((resp) => {
-            console.log("saved document", resp.document);
-            const contentState = JSON.stringify(convertToRaw(this.state.editorState.getCurrentContent()));
-            var rawContent = this.state.editorState.getCurrentContent();
-            var currentDocument = Object.assign({}, resp.document, {content: rawContent})
+      })
+    })
+    .then((response) => {
+      console.log('response in on save ', response);
+      return response.json()
+    })
+    .then((resp) => {
+      console.log("saved document", resp.document);
+      const contentState = JSON.stringify(convertToRaw(this.state.editorState.getCurrentContent()));
+      var rawContent = this.state.editorState.getCurrentContent();
+      var currentDocument = Object.assign({}, resp.document, {content: rawContent})
 
-            this.setState({saved: true, currentDocument: currentDocument, title: newTitle, editorState: EditorState.createWithContent(rawContent) })
-        })
-        .catch((err)=>console.log('error saving doc', err))
-        //   console.log('the current document to save is ', this.state.currentDocument);
-    }
+      this.setState({saved: true, currentDocument: currentDocument, title: newTitle, editorState: EditorState.createWithContent(rawContent) })
+    })
+    .catch((err)=>console.log('error saving doc', err))
+    //   console.log('the current document to save is ', this.state.currentDocument);
+  }
 
 
 
@@ -725,7 +769,11 @@ class MyEditor extends React.Component {
   onCollabSubmit() {
     console.log("DOCID", this.props.match.params.docId);
     console.log("NEWCOLLAB", this.state.newCollaborators);
+<<<<<<< HEAD
     fetch(baseURL+'documents/add/collaborator/'+this.props.match.params.docId, {
+=======
+    fetch(baseURL+'/documents/add/collaborator/'+this.props.match.params.docId, {
+>>>>>>> 2c3a364de6706ac41c1e4d74b19dcf4275328df1
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -737,12 +785,21 @@ class MyEditor extends React.Component {
 
       })
     })
+<<<<<<< HEAD
     .then((response) => {
       console.log('response from add collabs ', response);
       return response.json()
     })
     .then((resp) => {
       console.log('respose json is add collabs ', resp);
+=======
+
+    .then((response) => {
+      return response.json()
+    })
+    .then((resp) => {
+      //   console.log('respose json is add collabs ', resp);
+>>>>>>> 2c3a364de6706ac41c1e4d74b19dcf4275328df1
       this.setState({
         collaborators: resp.document.collaborators, collabModalOpen: false
         // newPassword: resp.document.password
@@ -752,6 +809,10 @@ class MyEditor extends React.Component {
       console.log('error in add collabs', err)
       this.setState({collabModalOpen: false});
       alert(`error adding collaborators ${this.state.newCollaborators}`)
+<<<<<<< HEAD
+=======
+
+>>>>>>> 2c3a364de6706ac41c1e4d74b19dcf4275328df1
     })
   }
 
@@ -768,7 +829,7 @@ class MyEditor extends React.Component {
   //called when user clicks ok and decides to not save changes
   onAlertOk() {
     this.setState({alertOpen: false, goBack: true});
-    //TODO: go back to documents page
+
   }
 
   //called when user clicks cancel on alert
@@ -838,11 +899,23 @@ class MyEditor extends React.Component {
               <Toolbar>
                 <ToolbarGroup firstChild={true}>
                   <span style={{display: 'flex', alignSelf: 'center', flexDirection:'row'}}>Shared with:</span>
-                  <List style={{paddingLeft: '15px', paddingRight: '10px'}}>
-                    {this.state.collaborators.map((user, i) => (
-                      <span key={i} className="collaboratorIcon" style={{backgroundColor: randomColor()}}>{'F'}</span>
 
-                    ))}
+                  <List style={{paddingLeft: '15px', paddingRight: '10px'}}>
+                    {this.state.online.map((user, i) => {
+                      var color = colors[i];
+                      return(
+                        <span onMouseOver={() => {
+                          alert(user.name);
+                        }}
+                        key={i}
+                        className="collaboratorIcon"
+                        style={{backgroundColor: color}}>
+                          {user.name[0]}
+                        </span>
+                      )
+
+
+                    })}
 
                   </List>
                 </ToolbarGroup>
@@ -867,9 +940,6 @@ class MyEditor extends React.Component {
                           onTouchTap={this.autoSave.bind(this)}/>
                         </ToolbarGroup>
                       </Toolbar>
-                      {/* </div>
-
-                      </div> */}
 
 
                       <div className="btn-toolbar editorToolbar">
@@ -886,22 +956,24 @@ class MyEditor extends React.Component {
                           <BlockStyles
                             editorState={this.state.editorState}
                             onToggle={this._toggleBlockType.bind(this)}
-              />
+
+                          />
+                        </div>
+                      </div>
+                      <div className="editor">
+                        {this.state.top ? (<div style={{position: 'absolute', backgroundColor: 'red', width: '2px', height: this.state.height, top: this.state.top, left: this.state.left}}></div>) : undefined}
+                        <Editor
+                          customStyleMap={this.state.styleMap}
+                          editorState={this.state.editorState}
+                          onChange={this.onChange.bind(this)}
+                          onTab={this._onTab.bind(this)}
+                          blockRenderMap={extendedBlockRenderMap}
+                          blockStyleFn={this.myBlockStyleFn}
+                        />
+                      </div>
+
                     </div>
-                </div>
-                <div className="editor">
-                    {this.state.top ? (<div style={{position: 'absolute', backgroundColor: 'red', width: '2px', height: this.state.height, top: this.state.top, left: this.state.left}}></div>) : undefined}
-                    <Editor
-                        customStyleMap={this.state.styleMap}
-                        editorState={this.state.editorState}
-                        onChange={this.onChange.bind(this)}
-                        onTab={this._onTab.bind(this)}
-                        blockRenderMap={extendedBlockRenderMap}
-                        blockStyleFn={this.myBlockStyleFn}
-                    />
-                </div>
-            </div>
-        </div>
+                  </div>
                 );
               }
             }
