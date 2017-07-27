@@ -69,7 +69,6 @@ const blockRenderMap = Map({
 const extendedBlockRenderMap = DefaultDraftBlockRenderMap.merge(blockRenderMap);
 
 class MyEditor extends React.Component {
-
   constructor(props) {
     super(props);
     this.state = {
@@ -88,6 +87,9 @@ class MyEditor extends React.Component {
         password: 'Frankie1!',
         email: 'fflores@colgate.edu'
       },
+      collabModalOpen: false,
+      newCollaborators: [],
+      newCollaborator: '',
       styleMap: {
         'BOLD': {
           fontWeight: 'bold'
@@ -123,7 +125,6 @@ class MyEditor extends React.Component {
     Mousetrap.stopCallback = function () {
       return false;
     }
-
   }
   autoSave(){
     setInterval(this.onSave.bind(this), 30000);
@@ -151,10 +152,9 @@ class MyEditor extends React.Component {
       selectedText: selectedText,
       currentContent: JSON.stringify(convertToRaw(editorState.getCurrentContent()))
     });
-
   }
 
-  componentDidMount() {
+  componentDidMount(){
     socket.on('redirect', () => {
       alert("Full");
       this.props.history.push('/directory');
@@ -319,12 +319,53 @@ class MyEditor extends React.Component {
     .catch((err)=>console.log('error saving doc', err))
     //   console.log('the current document to save is ', this.state.currentDocument);
   }
+  onAlertOpen() {
+    this.setState({alertOpen: !this.state.saved});
+  }
 
+  onCollabSubmit() {
+    console.log("DOCID", this.props.match.params.docId);
+    console.log("NEWCOLLAB", this.state.newCollaborators);
+    fetch('http://localhost:3000/documents/add/collaborator/'+this.props.match.params.docId, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        collaboratorEmails: this.state.newCollaborators
+        //   collaborators: newCollaborators
 
+      })
+    })
+    .then((response) => {
+      console.log('response from add collabs ', response);
+      return response.json()
+    })
+    .then((resp) => {
+      console.log('respose json is add collabs ', resp);
+      this.setState({
+        collaborators: resp.document.collaborators, collabModalOpen: false
+        // newPassword: resp.document.password
+      })
+    })
+    .catch((err)=> {
+      console.log('error in add collabs', err)
+      this.setState({collabModalOpen: false});
+      alert(`error adding collaborators ${this.state.newCollaborators}`)
+    })
+  }
+
+  onCollabClose() {
+    this.setState({collabModalOpen: false});
+  }
+
+  onCollabOpen() {
+    this.setState({collabModalOpen: true});
+  }
   onTitleEdit(event) {
     this.setState({saved: false, title: event.target.value})
   }
-
   //called when user clicks ok and decides to not save changes
   onAlertOk() {
     this.setState({alertOpen: false, goBack: true});
@@ -336,9 +377,7 @@ class MyEditor extends React.Component {
     this.setState({alertOpen: false});
   }
 
-  onAlertOpen() {
-    this.setState({alertOpen: !this.state.saved});
-  }
+
   render() {
     const actions = [
       <FlatButton label="Cancel" primary={true} onTouchTap={this.onAlertClose.bind(this)}/>,
@@ -349,38 +388,137 @@ class MyEditor extends React.Component {
         )
       }
       return (
+        // <div >
+        //     <AppBar
+        //         title={
+        //             <TextField id="text-field-controlled" inputStyle={this.state.title === 'Untitled Document' ? {color: 'white', fontStyle: 'italic'}: {color: 'white'}} underlineShow={false} value={this.state.title} onChange={this.onTitleEdit.bind(this)} />}
+        //         onLeftIconButtonTouchTap={this.state.saved ? this.onAlertOk.bind(this): this.onAlertOpen.bind(this)}
+        //     />
+        //     <Dialog
+        //         title="Add Collaborators by email"
+        //         modal={true}
+        //         open={this.state.collabModalOpen}
+        //     > <div>To add a new collaborator, type in an email and press enter</div>
+        //         <form className="commentForm" onSubmit={this.onCollabSubmit.bind(this)}>
+        //             <div>
+        //                 {this.state.newCollaborators.map((collab) => <p>{collab}</p>)}
+        //             </div>
+        //             <input
+        //                 type="text"
+        //                 placeholder="collaborator"
+        //                 value={this.state.newCollaborator}
+        //                 onKeyDown={(e) => {
+        //                     if(e.key === 'Enter'){
+        //                         e.preventDefault()
+        //                         var updatedCollaborators = this.state.newCollaborators.concat([this.state.newCollaborator]);
+        //                         this.setState({newCollaborator: '', newCollaborators: updatedCollaborators})
+        //                     }
+        //                 }}
+        //                 onChange={(e) => this.setState({newCollaborator: e.target.value})}
+        //             />
+        //             <div style={{ textAlign: 'right', padding: 8, margin: '24px -24px -24px -24px' }}>
+        //                 {[<FlatButton label="Cancel" primary={true} onClick={() => this.onCollabClose()}/>,
+        //                     <FlatButton type="submit" label="Submit" primary={true}/>,
+        //                 ]}
+        //             </div>
+        //         </form>
+        //     </Dialog>
+        //     <Dialog
+        //         title="Changes not saved!"
+        //         actions={actions}
+        //         modal={true}
+        //         open={this.state.alertOpen}
+        //     >You have unsaved changes! Click save to prevent your changes from being lost!</Dialog>
+        //
+        //
+        //     <div className="docContainer">
+        //         <div className='documentControls'>
+        //
+        //
+        //             <div className="rightSideControls">
+        //                 {/* <span style={{display: 'flex', alignSelf: 'center'}}>Shared with:</span>
+        //                     <List style={{paddingLeft: '15px', paddingRight: '10px'}}>
+        //                     {this.state.collaborators.map((user, i) => (
+        //                         <span key={i} className="collaboratorIcon" style={{backgroundColor: randomColor()}}>{user.name.slice(0,1)}</span>
+        //
+        //                     ))}
+        //
+        //                 </List>  */}
+        //
+        //                 <RaisedButton
+        //                     label={this.state.saved ? "Saved" : "Save"}
+        //                     style={{margin: 5}}
+        //                     primary={true}
+        //                     disabled={this.state.saved}
+        //                     onTouchTap={this.onSave.bind(this)}/>
+        //             </div>
+
+
         <div >
           <AppBar
             title={
               <TextField id="text-field-controlled" inputStyle={this.state.title === 'Untitled Document' ? {color: 'white', fontStyle: 'italic'}: {color: 'white'}} underlineShow={false} value={this.state.title} onChange={this.onTitleEdit.bind(this)} />}
               onLeftIconButtonTouchTap={this.state.saved ? this.onAlertOk.bind(this): this.onAlertOpen.bind(this)}
             />
-
             <Dialog
-              title="Changes not saved!"
-              actions={actions}
+              title="Add Collaborators by email"
               modal={true}
-              open={this.state.alertOpen}
-              >You have unsaved changes! Click save to prevent your changes from being lost!</Dialog>
+              open={this.state.collabModalOpen}
+              > <div>To add a new collaborator, type in an email and press enter</div>
+              <form className="commentForm" onSubmit={this.onCollabSubmit.bind(this)}>
+                <div>
+                  {this.state.newCollaborators.map((collab) => <p>{collab}</p>)}
+                </div>
+                <input
+                  type="text"
+                  placeholder="collaborator"
+                  value={this.state.newCollaborator}
+                  onKeyDown={(e) => {
+                    if(e.key === 'Enter'){
+                      e.preventDefault()
+                      var updatedCollaborators = this.state.newCollaborators.concat([this.state.newCollaborator]);
+                      this.setState({newCollaborator: '', newCollaborators: updatedCollaborators})
+                    }
+                  }}
+                  onChange={(e) => this.setState({newCollaborator: e.target.value})}
+                />
+                <div style={{ textAlign: 'right', padding: 8, margin: '24px -24px -24px -24px' }}>
+                  {[<FlatButton label="Cancel" primary={true} onClick={() => this.onCollabClose()}/>,
+                  <FlatButton type="submit" label="Submit" primary={true}/>,
+                ]}
+              </div>
+            </form>
+          </Dialog>
+          <Dialog
+            title="Changes not saved!"
+            actions={actions}
+            modal={true}
+            open={this.state.alertOpen}
+            >You have unsaved changes! Click save to prevent your changes from being lost!</Dialog>
 
 
-              <div className="docContainer">
-                {/*  <div className='documentControls'>
-                <div style={{display:'flex', flexDirection: 'row'}} > */}
-                <Toolbar>
-                  <ToolbarGroup firstChild={true}>
-                    <span style={{display: 'flex', alignSelf: 'center', flexDirection:'row'}}>Shared with:</span>
-                    <List style={{paddingLeft: '15px', paddingRight: '10px'}}>
-                      {this.state.collaborators.map((user, i) => (
-                        <span key={i} className="collaboratorIcon" style={{backgroundColor: randomColor()}}>{user.name.slice(0,1)}</span>
+            <div className="docContainer">
+              {/*  <div className='documentControls'>
+              <div style={{display:'flex', flexDirection: 'row'}} > */}
+              <Toolbar>
+                <ToolbarGroup firstChild={true}>
+                  <span style={{display: 'flex', alignSelf: 'center', flexDirection:'row'}}>Shared with:</span>
+                  <List style={{paddingLeft: '15px', paddingRight: '10px'}}>
+                    {this.state.collaborators.map((user, i) => (
+                      <span key={i} className="collaboratorIcon" style={{backgroundColor: randomColor()}}>{'F'}</span>
 
-                      ))}
+                    ))}
 
-                    </List>
-                  </ToolbarGroup>
-                  {/* </div>
-                    <div className="rightSideControls"> */}
-                    <ToolbarGroup lastChild={true}>
+                  </List>
+                </ToolbarGroup>
+                {/* </div>
+                  <div className="rightSideControls"> */}
+                  <ToolbarGroup lastChild={true}>
+                    <RaisedButton
+                      label={"add collaborators"}
+                      style={{margin: 5}}
+                      primary={true}
+                      onTouchTap={this.onCollabOpen.bind(this)}/>
                       <RaisedButton
                         label={this.state.saved ? "Saved" : "Save"}
                         style={{margin: 5}}
