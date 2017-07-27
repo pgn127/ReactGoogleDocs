@@ -23,33 +23,6 @@ import MenuItem from 'material-ui/MenuItem';
 import io from 'socket.io-client'
 const socket = io.connect("http://localhost:3000");
 
-const styleMap = {
-  'BOLD': {
-    fontWeight: 'bold'
-  },
-  'ITALIC': {
-     'fontStyle': 'italic'
-  },
-  'UNDERLINE': {
-     'textDecoration': 'underline'
-  },
-  'FONT-COLOR': {
-    'color': 'black'
-  },
-  'FONT-SIZE': {
-     'fontSize': '12'
-  },
-  'TEXT-ALIGN-LEFT': {
-      'textAlign': 'left'
-  },
-  'TEXT-ALIGN-CENTER': {
-      'textAlign': 'center'
-  },
-  'TEXT-ALIGN-RIGHT': {
-      'textAlign': 'right'
-  }
-};
-
 const blockRenderMap = Map({
     'alignRight': {
         element: 'div'
@@ -391,7 +364,7 @@ class MyEditor extends React.Component {
                             <FlatButton label="View" />
                             <FlatButton label="Help" />
                           </div>
-                          
+
                             <Popover
                               open={this.state.isFileOpen}
                               anchorEl={this.state.anchorEl}
