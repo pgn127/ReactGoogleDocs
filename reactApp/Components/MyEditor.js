@@ -155,8 +155,10 @@ class MyEditor extends React.Component {
 
     })
 
-    this.socket.on('receiveNewCursor', incomingSelectionObj => {
-        // console.log('in receive new cursor');
+    this.socket.on('receiveNewCursor', (data) => {
+        // console.log('in receive of cursor mvoemnt');
+        const incomingSelectionObj = data.incomingSelectionObj
+        const loc = data.loc
         let editorState = this.state.editorState;
         const originalEditorState = editorState;
         const originalSelection = this.state.editorState.getSelection();
@@ -168,42 +170,22 @@ class MyEditor extends React.Component {
         const temporaryEditorState = EditorState.forceSelection(originalEditorState, incomingSelectionState)
 
         if(temporaryEditorState) {
-            // console.log('received cursor move');
-            // console.log('temporaryEditorState nto undefined ', temporaryEditorState);
             this.setState({editorState: temporaryEditorState}, function() {
                 //were now referring to browser selectionstateobjc
-                const windowSelection = window.getSelection();
-                console.log('window selection was ', windowSelection);
-                if(windowSelection.rangeCount>0){
-
-                    const range = windowSelection.getRangeAt(0);
-                    const clientRects = range.getClientRects()
-                    console.log('client rects length ', clientRects);
-                    if(clientRects.length > 0) {
-                        const rects = clientRects[0];//cursor wil always be a single range so u can just ge tthe first range in the array
-                        const {top, left, bottom} = rects;
-                        this.setState({editorState: originalEditorState, top, left, height: bottom - top})
-                    }
+                if(loc && loc.top && loc.bottom && loc.left) {
+                    // console.log('location received was not null, about to move other users curosr', loc);
+                    this.setState({editorState: originalEditorState, top: loc.top, left: loc.left, height: loc.bottom - loc.top})
                 }
+
             })
         } else {
             console.log('temportaray state undefined wtf');
         }
     })
 
+
     //emit a joined message to everyone else also in the same document, send the document id of what u are trying to join
     this.socket.emit('joined', {doc: this.props.match.params.docId})
-
-
-
-// //what if there is a 10 second pause between the emit and this handler being set up: you could miss a server response,
-// //solutions: move the emits below the "on handler" oR
-// //2. do a "handshake"
-//
-//     //listne for a server event back
-//     this.socket.on('helloback', ({name}) => {
-//         console.log('hello back', name);
-//     })
 
   }
 
@@ -222,7 +204,6 @@ class MyEditor extends React.Component {
 
       //if i have a previous highlight,
       if(this.previousHighlight){ //if i have an old selection, then  change editorstate to be the result of
-
           //accept selection changes the editorstate to have the previous highlight selection- turn off where the old highlight was,
           editorState = EditorState.acceptSelection(editorState, this.previousHighlight)
           //switch to old editorstate
@@ -238,13 +219,36 @@ class MyEditor extends React.Component {
       this.previousHighlight = editorState.getSelection(); //set previous heighlight  to be newest selection, if theres no new highlight this seems to not even  happen
 
 
-    //   console.log('selection is ', selection, selection.getStartOffset(), selection.getEndOffset());
       //DETECTING CURSOR VERSUS HIGHLIGHT: if your cursor is only in one spot and not highlighting anything then this is not a highlight
       if(selection.getStartOffset() === selection.getEndOffset()){
+
         //only emit a cursor event if it took place in the editor (dont emit an event where user has clicked somewhere out of the screen)
             if(selection._map._root.entries[5][1]){
-                // console.log('emitting cursor moving', selection);
-                this.socket.emit('cursorMove', selection)
+                // console.log('this was a cursor movement', selection.getAnchorOffset(), selection._map._root.entries,window.getSelection());
+                if(window.getSelection().focusNode){
+                    console.log('focus node ', window.getSelection().focusNode.offsetTop);
+                }
+
+
+                const windowSelection = window.getSelection();
+                if(windowSelection.rangeCount>0){
+                    // console.log('window selection rangecount >0');
+                    const range = windowSelection.getRangeAt(0);
+                    const clientRects = range.getClientRects()
+                    // console.log('CLIENT RECTS ', clientRects);
+                    if(clientRects.length > 0) {
+                        // console.log('client rects >0');
+                        const rects = clientRects[0];//cursor wil always be a single range so u can just ge tthe first range in the array
+                        const {top, left, bottom} = rects;
+                        const loc = {top: rects.top, bottom: rects.bottom, left: rects.left}
+                        const data = {incomingSelectionObj: selection, loc: loc}
+                        // console.log('about to emit cursor movement ');
+                        this.socket.emit('cursorMove', data)
+                        //
+                        // this.setState({editorState: originalEditorState, top, left, height: bottom - top})
+                    }
+                    // this.socket.emit('cursorMove', selection)
+                }
             }
       } else {
           console.log('it was a hgihlight');
@@ -255,24 +259,6 @@ class MyEditor extends React.Component {
       var currentContent = convertToRaw(editorState.getCurrentContent()); //returns content state out of the editor state
       this.socket.emit('newContent', JSON.stringify(currentContent)); //emit a newcontent event
 
-
-
-      // var selectionState = editorState.getSelection();
-      // var anchorKey = selectionState.getAnchorKey();
-      // // var currentContentBlock = currentContent.getBlockForKey(anchorKey);
-      // var start = selectionState.getStartOffset();
-      // var end = selectionState.getEndOffset();
-      // var selectedText = currentContentBlock.getText().slice(start, end);
-
-      // console.log("onChange", currentContent.getPlainText());
-      // console.log(start, end, selectedText);
-      // socket.emit('cursor', {
-      //   room: this.state.room,
-      //   start: start,
-      //   end: end,
-      //   selectedText: selectedText,
-      //   currentContent: currentContent
-      // });
   }
 
 //to ensure something happens righ when component is about to get killed
