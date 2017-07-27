@@ -22,17 +22,6 @@ class Root extends React.Component {
   //   }
   // }
 
-  // componentWillMount(){
-  //   fetch('http://localhost:3000/isLoggedIn', {credentials: 'include'})
-  //   .then((response) => {
-  //     return response.json()
-  //   })
-  //   .then((resp) => {
-  //   //   console.log("pulled resp", resp);
-  //     this.setState({loggedIn: resp.loggedIn});
-  //   })
-  //   .catch((err)=>console.log(err))
-  // }
 
   render() {
     // console.log(this.state);

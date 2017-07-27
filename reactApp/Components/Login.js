@@ -16,8 +16,12 @@ import Paper from 'material-ui/Paper';
 import TextField from 'material-ui/TextField';
 import FlatButton from 'material-ui/FlatButton';
 import RaisedButton from 'material-ui/RaisedButton';
+<<<<<<< HEAD
 
 const baseURL = 'http://be747dfd.ngrok.io'//'http://localhost:3000';
+=======
+const baseURL = 'http://be747dfd.ngrok.io/'
+>>>>>>> 9d0b3b4161008baa06c91c4993df22a3f0c1ced9
 const style = {
   margin: 12,
 };
@@ -47,7 +51,11 @@ export default class Login extends React.Component {
   }
   handleSubmit(){
     console.log(this.state);
+<<<<<<< HEAD
     fetch(baseURL+'/login', {
+=======
+    fetch(baseURL+'login', {
+>>>>>>> 9d0b3b4161008baa06c91c4993df22a3f0c1ced9
       credentials: 'include',
       method: 'POST',
       headers: {

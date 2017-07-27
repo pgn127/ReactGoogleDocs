@@ -38,7 +38,7 @@ class FontStyles extends React.Component {
 
   colorPicker() {
     return (
-      <div style={{display: 'inline-block'}}>
+<span>
           <button className="icon-font styleButton"
               onClick={this.openColorPicker.bind(this)}
           />
@@ -51,20 +51,20 @@ class FontStyles extends React.Component {
         >
         <CirclePicker onChangeComplete={this.props.onFontColorClick.bind(this)} />
         </Popover>
-      </div>
+</span>
     )
   };
 
   fontSizeIcons() {
     return(
-      <div>
+      <span>
         <button className="icon-zoom-in styleButton"
         onClick={this.props.onFontSizeIncreaseClick.bind(this)}
         />
         <button className="icon-zoom-out styleButton"
         onClick={this.props.onFontSizeDecreaseClick.bind(this)}
         />
-      </div>
+    </span>
     )
   }
 
@@ -81,6 +81,7 @@ class FontStyles extends React.Component {
                         style={type.style}
                     />
                 )}
+
               {this.colorPicker()}
               {this.fontSizeIcons()}
             </div>
