@@ -29,7 +29,7 @@ import _ from 'underscore';
 import io from 'socket.io-client'
 
 // const baseURL = 'http://be747dfd.ngrok.io'
-const baseURL = 'https://reactgoogledocs.herokuapp.com/'
+const baseURL = 'https://reactgoogledocs.herokuapp.com'
 
 const styleMap = {
   'BOLD': {
@@ -162,7 +162,8 @@ class MyEditor extends React.Component {
     }
     this.focus = () => this.refs.editor.focus();
     this.previousHighlight = null; //means you dont have a selection/highlight but can still ahv ea cursor
-    this.socket = io.connect('http://localhost:3000');
+    // this.socket = io.connect('http://localhost:3000');
+    this.socket = io.connect('https://reactgoogledocs.herokuapp.com');
 
     //listen for a response from server to confirm your entry to this room
     this.socket.on('welcome', ({doc}) => {
@@ -356,7 +357,7 @@ this.setState({editorState: editorState, saved: false})
       if(resp.document.content === ""){
         console.log('document content was empty ');
         this.setState({saved: false, currentDocument: resp.document, collaborators: resp.document.collaborators, title: resp.document.title});
-
+        this.setState({contentHistory: []});
       } else {
         const contentState = convertFromRaw( JSON.parse(resp.document.content) ) ;
         var currentDocument = Object.assign({}, resp.document, {content: contentState})
@@ -449,6 +450,7 @@ this.setState({editorState: editorState, saved: false})
     contentState.date = new Date();
     contentState.creator = this.props.store.get('user').name;
     contentState = JSON.stringify(contentState);
+    console.log(this.state.contentHistory);
     var newContentHistory = this.state.contentHistory.slice();
     newContentHistory.push(contentState);
     this.setState({contentHistory: newContentHistory}, () => {
