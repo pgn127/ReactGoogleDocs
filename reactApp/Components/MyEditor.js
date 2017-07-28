@@ -26,7 +26,7 @@ import _ from 'underscore'
 import io from 'socket.io-client'
 
 // const baseURL = 'http://be747dfd.ngrok.io'
-const baseURL = 'http://localhost:3000'
+const baseURL = 'https://reactgoogledocs.herokuapp.com/'
 
 const styleMap = {
   'BOLD': {
