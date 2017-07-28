@@ -214,9 +214,11 @@ router.post('/documents/add/collaborator/:documentId', function(req, res){
                 }
             })
             .catch(err => {
+                console.log('caught error in  catch find of users ', err);
                 throw new Error('Mongo Error: Unable to find user with email.'+err)
             })
         } else {
+            console.log('caught error in the case where !doc is true');
             throw new Error('Unable to find document. Cannot add collaborators.')
         }
     })
