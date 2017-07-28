@@ -16,6 +16,8 @@ import Paper from 'material-ui/Paper';
 import TextField from 'material-ui/TextField';
 import FlatButton from 'material-ui/FlatButton';
 import RaisedButton from 'material-ui/RaisedButton';
+import AutoComplete from 'material-ui/AutoComplete';
+
 
 // const baseURL = 'http://localhost:3000'
 const baseURL = 'https://reactgoogledocs.herokuapp.com';
@@ -29,8 +31,14 @@ export default class Login extends React.Component {
       email: '',
       password: '',
       loggedin: false,
+      dataSource: ['test', 'abcd', 'Frankie', 'pam@aol.com']
     };
   }
+
+  handleEmailUpdateInput(value) {
+    this.setState({email: value});
+  };
+
 
   componentDidMount(){
     var storedUser = this.props.store.get('user')
@@ -94,11 +102,19 @@ export default class Login extends React.Component {
           <h1 style={{textAlign: 'center', fontSize: '30px', paddingBottom: '20px', paddingTop:'20px'}}>Login to Docs</h1>
           <div style={{display:'flex', alignItems: 'center', justifyContent: 'center', paddingTop:'10px'}}>
 
-            <TextField
+            {/* <TextField
               hintText="Enter your email..."
               type="email"
               onChange={(e)=> this.setState({email: e.target.value})}
-            />
+            /> */}
+
+              <AutoComplete
+                hintText="Enter your email..."
+                type="email"
+                dataSource={this.state.dataSource}
+                filter={AutoComplete.caseInsensitiveFilter}
+                onUpdateInput={(value) => this.handleEmailUpdateInput(value)}
+              />
 
           </div>
           <div style={{display:'flex', alignItems: 'center', justifyContent: 'center', paddingTop:'10px'}}>

@@ -21,8 +21,12 @@ import TextField from 'material-ui/TextField';
 import IconMenu from 'material-ui/IconMenu';
 import MoreVertIcon from 'material-ui/svg-icons/navigation/more-vert';
 
-// const baseURL = 'http://localhost:3000'
-const baseURL = 'https://reactgoogledocs.herokuapp.com'
+
+//const baseURL = 'http://localhost:3000';
+//const baseURL = 'http://b9a62ead.ngrok.io';
+const baseURL = 'https://reactgoogledocs.herokuapp.com';
+
+
 
 class Directory extends React.Component {
   constructor(props){

@@ -4,7 +4,7 @@
   "description": "A minimal Electron application with React and Express",
   "main": "main.js",
   "scripts": {
-    "dev": "concurrently -k \"npm run devWebpack\" \"npm run devApp\" \"npm run devServer\"",
+    "dev": "concurrently -k \"npm run devWebpack\" \"npm run devApp\"",
     "devWebpack": "webpack-dev-server --content-base build/",
     "devApp": "electron main.js --dev",
     "devServer": "nodemon --watch backend backend/server.js",
