@@ -26,8 +26,9 @@ import _ from 'underscore'
 import io from 'socket.io-client'
 
 
-const baseURL = "http://be747dfd.ngrok.io/" //'http://be747dfd.ngrok.io/
-
+//const baseURL = 'http://localhost:3000'
+//const baseURL = 'http://b9a62ead.ngrok.io'
+const baseURL = 'https://reactgoogledocs.herokuapp.com'
 
 const styleMap = {
   'BOLD': {
@@ -152,9 +153,9 @@ class MyEditor extends React.Component {
     this.previousHighlight = null; //means you dont have a selection/highlight but can still ahv ea cursor
 
 
-    this.socket = io.connect('http://be747dfd.ngrok.io')//"http://localhost:3000")//)//http://be747dfd.ngrok.io
-
-    // this.socket = io.connect('http://be747dfd.ngrok.io')
+    this.socket = io.connect("https://reactgoogledocs.herokuapp.com/")
+    //this.socket = io.connect("http://localhost:3000")
+    // this.socket = io.connect('http://b9a62ead.ngrok.io')
 
     //listen for a response from server to confirm your entry to this room
     this.socket.on('welcome', ({doc}) => {
@@ -322,7 +323,7 @@ class MyEditor extends React.Component {
 
 
   componentDidMount(){
-    fetch(baseURL+'documents/'+this.props.match.params.docId)
+    fetch(baseURL+'/documents/'+this.props.match.params.docId)
     .then((response) => {
       return response.json()
     })
@@ -419,7 +420,7 @@ class MyEditor extends React.Component {
   onSave(){
     var newContent = JSON.stringify(convertToRaw(this.state.editorState.getCurrentContent()));
     var newTitle = this.state.title;
-    fetch(baseURL+'/documents/save/'+this.props.match.params.docId, {
+    fetch(baseURL+'documents/save/'+this.props.match.params.docId, {
       method: 'POST',
       headers: {
         "Content-Type": "application/json"
@@ -493,38 +494,6 @@ class MyEditor extends React.Component {
     this.onChange(RichUtils.onTab(e, this.state.editorState, maxDepth));
   }
 
-  onSave(){
-    var newContent = JSON.stringify(convertToRaw(this.state.editorState.getCurrentContent()));
-    // console.log('content that is being saved is ', newContent);
-    var newTitle = this.state.title;
-    fetch(baseURL+'documents/save/'+this.props.match.params.docId, {
-      method: 'POST',
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        content: newContent,
-        title: newTitle,
-        //   password: newPassword,
-        //   collaborators: newCollaborators
-
-      })
-    })
-    .then((response) => {
-      console.log('response in on save ', response);
-      return response.json()
-    })
-    .then((resp) => {
-      console.log("saved document", resp.document);
-      const contentState = JSON.stringify(convertToRaw(this.state.editorState.getCurrentContent()));
-      var rawContent = this.state.editorState.getCurrentContent();
-      var currentDocument = Object.assign({}, resp.document, {content: rawContent})
-
-      this.setState({saved: true, currentDocument: currentDocument, title: newTitle, editorState: EditorState.createWithContent(rawContent) })
-    })
-    .catch((err)=>console.log('error saving doc', err))
-    //   console.log('the current document to save is ', this.state.currentDocument);
-  }
   onAlertOpen() {
     this.setState({alertOpen: !this.state.saved});
   }
