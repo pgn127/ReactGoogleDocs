@@ -79,87 +79,6 @@ const colors = ['red', 'orange', 'yellow', 'green', 'blue', 'violet']
 const extendedBlockRenderMap = DefaultDraftBlockRenderMap.merge(blockRenderMap);
 
 class MyEditor extends React.Component {
-  // constructor(props) {
-  //   super(props);
-  //   this.state = {
-  //     editorState: EditorState.createEmpty(), //editorState from draftjs
-  //     title: 'Untitled Document',
-  //     saved: false,
-  //     alertOpen: false,
-  //     collaborators: [],
-  //     currentDocument:  {},
-  //     goBack: false,
-  //     isFileOpen: false,
-  //     autosave: false,
-  //     currentUser: {
-  //       _id: '597797018cccf651b76f25ac',
-  //       name: 'Frankie',
-  //       password: 'Frankie1!',
-  //       email: 'fflores@colgate.edu'
-  //     },
-  //     collabModalOpen: false,
-  //     newCollaborators: [],
-  //     newCollaborator: '',
-  //     styleMap: {
-  //       'BOLD': {
-  //         fontWeight: 'bold'
-  //       },
-  //       'ITALIC': {
-  //         'fontStyle': 'italic'
-  //       },
-  //       'UNDERLINE': {
-  //         'textDecoration': 'underline'
-  //       },
-  //       'FONT-COLOR': {
-  //         'color': 'black'
-  //       },
-  //       'FONT-SIZE': {
-  //         'fontSize': '12px'
-  //       },
-  //       'TEXT-ALIGN-LEFT': {
-  //         'textAlign': 'left'
-  //       },
-  //       'TEXT-ALIGN-CENTER': {
-  //         'textAlign': 'center'
-  //       },
-  //       'TEXT-ALIGN-RIGHT': {
-  //         'textAlign': 'right'
-  //       }
-  //     },
-  //     room: ""
-  //   };
-  //   this.socket = io.connect("http://localhost:3000/");//http://be747dfd.ngrok.io/
-  //   //doc id is this.props.match.params.docId
-  //   this.socket.on('redirect', () => {
-  //     alert("Full");
-  //     this.props.history.push('/directory');
-  //   });
-  //   this.socket.on('newCursor', incomingSelectionObj => {
-  //     let editorState = this.state.editorState;
-  //     const ogEditorState = editorState;
-  //     const ogSelection = editorState.getSelection()
-  //
-  //     const incomingSelectionState = ogSelection.merge(incomingSelectionObj);
-  //     const temporaryEditorState = EditorState.forceSelection(ogEditorState, incomingSelectionState)
-  //
-  //     this.setState({editorState: temporaryEditorState}, function(){
-  //       const winSel = window.getSelection();
-  //       const range = winSel.getRangeAt(0);
-  //       const rects = range.getClientRects()[0];
-  //       const {top, left, bottom } = rects;
-  //     })
-  //   })
-  //   this.socket.on('update', (data) => {
-  //     const updatedState = convertFromRaw(JSON.parse(data.currentContent));
-  //     this.setState({editorState: EditorState.createWithContent(updatedState)});
-  //   });
-  //   // this.onChange = (editorState) => this.setState({editorState});
-  //   this.focus = () => this.refs.editor.focus();
-  //   Mousetrap.bind('command+s', this.onSave.bind(this));
-  //   Mousetrap.stopCallback = function () {
-  //     return false;
-  //   }
-  // }
   constructor(props) {
     super(props);
     this.state = {
@@ -227,7 +146,7 @@ class MyEditor extends React.Component {
 
     })
     //listen for userjoined events for this room/documents
-    this.socket.on('userjoined', ({online}) => {
+    this.socket.on('userjoined',()=>{
       console.log('user has joined the room');
 
     })
@@ -271,22 +190,6 @@ class MyEditor extends React.Component {
 
         if(temporaryEditorState) {
             this.setState({editorState: temporaryEditorState}, function() {
-                //were now referring to browser selectionstateobjc
-
-                // const windowSelection = window.getSelection();
-                // console.log('window selection was ', windowSelection);
-                // if(windowSelection.rangeCount>0){
-                //
-                //
-                //     const range = windowSelection.getRangeAt(0);
-                //     const clientRects = range.getClientRects()
-                //     console.log('client rects length ', clientRects);
-                //     if(clientRects.length > 0) {
-                //         const rects = clientRects[0];//cursor wil always be a single range so u can just ge tthe first range in the array
-                //         const {top, left, bottom} = rects;
-                //         this.setState({editorState: originalEditorState, top, left, height: bottom - top})
-                //     }
-
                 if(loc && loc.top && loc.bottom && loc.left) {
                     // console.log('location received was not null, about to move other users curosr', loc);
                     this.setState({editorState: originalEditorState, top: loc.top, left: loc.left, height: loc.bottom - loc.top})
@@ -336,10 +239,6 @@ class MyEditor extends React.Component {
     this.socket.emit('joined', {doc: this.props.match.params.docId, user: this.props.store.get('user')});
 
 
-    //emit a joined message to everyone else also in the same document, send the document id of what u are trying to join
-    // this.socket.emit('joined', {doc: this.props.match.params.docId})
-
-
   }
   autoSave(){
     setInterval(this.onSave.bind(this), 30000);
@@ -385,7 +284,6 @@ class MyEditor extends React.Component {
   // }
   onChange(editorState) {
   //  console.log(this.previousHighlight);
-      this.setState({editorState: editorState, saved: false})
 
       //save current selection
       const selection = editorState.getSelection() //refers to most up to date selection and save it
@@ -398,16 +296,10 @@ class MyEditor extends React.Component {
 
           editorState = EditorState.acceptSelection(editorState, selection)
           //switch back to new selection by applying 'selection' (that we previously saved before overwirting ) to the editorState
+          this.previousHighlight = null;
 
       }
       //apply and remove instead of togle to fix the glitch???
-      editorState = RichUtils.toggleInlineStyle(editorState, 'RED');
-      this.previousHighlight = editorState.getSelection(); //set previous heighlight  to be newest selection, if theres no new highlight this seems to not even  happen
-
-
-      //DETECTING CURSOR VERSUS HIGHLIGHT: if your cursor is only in one spot and not highlighting anything then this is not a highlight
-
-
       //DETECTING CURSOR VERSUS HIGHLIGHT: if your cursor is only in one spot and not highlighting anything then this is not a highlight
       // if(selection.getStartOffset() === selection.getEndOffset()){
       //   //only emit a cursor event if it took place in the editor (dont emit an event where user has clicked somewhere out of the screen)
@@ -420,36 +312,14 @@ class MyEditor extends React.Component {
       // }
 
       // this.setState({editorState: editorState, saved: false})
-
-      var currentContent = convertToRaw(editorState.getCurrentContent()); //returns content state out of the editor state
-      this.socket.emit('newContent', JSON.stringify(currentContent)); //emit a newcontent event
-
       if(selection.getStartOffset() === selection.getEndOffset()){
 
         //only emit a cursor event if it took place in the editor (dont emit an event where user has clicked somewhere out of the screen)
             console.log('inside compare selection');
             if(selection._map._root.entries[5][1]){
-//MERGE
-                // console.log('emitting cursor moving', selection);
-                // console.log('inside selecton map if');
-                // const windowSelection = window.getSelection();
-                // if(windowSelection.rangeCount>0){
-                //     console.log('inside window range');
-                //     const range = windowSelection.getRangeAt(0);
-                //     const clientRects = range.getClientRects()
-                //     console.log("REG RECTS", clientRects);
-                //     console.log("BOUNDING", range.getBoundingClientRect());
-                //     // console.log('CLIENT RECTS ', clientRects);
-                //     if(clientRects.length > 0) {
-                //
-                //         console.log('inside clientRects');
-//ENDMERGE
-                // console.log('this was a cursor movement', selection.getAnchorOffset(), selection._map._root.entries,window.getSelection());
                 if(window.getSelection().focusNode){
                     console.log('focus node ', window.getSelection().focusNode.offsetTop);
                 }
-
-
                 const windowSelection = window.getSelection();
                 if(windowSelection.rangeCount>0){
                     // console.log('window selection rangecount >0');
@@ -462,8 +332,6 @@ class MyEditor extends React.Component {
                         const {top, left, bottom} = rects;
                         const loc = {top: rects.top, bottom: rects.bottom, left: rects.left}
                         const data = {incomingSelectionObj: selection, loc: loc}
-
-
                         // console.log('about to emit cursor movement ');
                         this.socket.emit('cursorMove', data)
                         //
@@ -475,12 +343,16 @@ class MyEditor extends React.Component {
             }
       } else {
           console.log('it was a hgihlight');
+          editorState = RichUtils.toggleInlineStyle(editorState, 'RED');
+          this.previousHighlight = editorState.getSelection(); //set previous heighlight  to be newest selection, if theres no new highlight this seems to not even  happen
+
       }
 
       // this.setState({editorState: editorState, saved: false})
 
       var currentContent = convertToRaw(editorState.getCurrentContent()); //returns content state out of the editor state
       this.socket.emit('newContent', JSON.stringify(currentContent)); //emit a newcontent event
+      this.setState({editorState: editorState, saved: false})
 
   }
 
@@ -490,72 +362,15 @@ class MyEditor extends React.Component {
     this.socket.emit('disconnect', {userLeft: this.props.store.get('user')});
     this.socket.disconnect();
 
-    // console.log(1);
-    // var newOnline2 = this.state.online.slice();
-    // var index = 0;
-    // for(var i = 0; i < newOnline2.length; i++) {
-    //   if(newOnline2[i]._id === this.props.store.get('user')._id) {
-    //       index = i;
-    //   }
-    // }
-    // console.log(1, this.state.online);
-    // newOnline2.splice(index, 1);
-    // console.log(1, newOnline2);
-    // this.setState({online: newOnline2}, () => {
-    //   console.log("Left", this.state.online);
-    //   this.socket.emit('disconnect');
-    //   this.socket.disconnect();
-    // });
 
 
 
   }
 
 
-  // componentDidMount(){
-  //
-  //   console.log(this.props.match.params.docId);
-  //   fetch(baseURL+'documents/'+this.props.match.params.docId)
-  //   .then((response) => {
-  //
-  //     return response.json()
-  //   })
-  //   .then((resp) => {
-  //     console.log("pulled doc", resp.document);
-  //     //if this document has no content dont overwrite empty editorState in the state
-  //     if(resp.document.content === ""){
-  //       console.log('document content was empty ');
-  //       this.setState({saved: false, currentDocument: resp.document, collaborators: resp.document.collaborators, title: resp.document.title});
-  //
-  //     } else {
-  //       console.log('document has an existing state');
-  //       const contentState = convertFromRaw( JSON.parse(resp.document.content) ) ;
-  //       var currentDocument = Object.assign({}, resp.document, {content: contentState})
-  //       this.setState({saved: false, currentDocument: currentDocument, collaborators: currentDocument.collaborators, title: currentDocument.title, editorState: EditorState.createWithContent(contentState) })
-  //
-  //       //this.socket.emit('room', currentDocument.title);
-  //       this.setState({room: currentDocument.title});
-  //
-  //     }
-  //     // console.log('document collaborators ', currentDocument.collaborators);
-  //     // this.setState({currentDocument: resp.document})
-  //   })
-  //   .catch((err)=>console.log('error pulling doc', err));
-  //
-  // }
-
 
   componentDidMount(){
-    // socket.on('redirect', () => {
-    //     alert("Full");
-    //     this.props.history.push('/directory');
-    // });
-    // this.socket.on('update', (data) => {
-    //     console.log("Update");
-    //     const updatedState = convertFromRaw(JSON.parse(data.currentContent));
-    //     this.setState({editorState: EditorState.createWithContent(updatedState)});
-    // })
-    // console.log(this.props.match.params.docId);
+
     fetch(baseURL+'documents/'+this.props.match.params.docId)
     .then((response) => {
 
@@ -595,8 +410,6 @@ class MyEditor extends React.Component {
   _toggleBlockType(blockType) {
     this.onChange(RichUtils.toggleBlockType(this.state.editorState, blockType));
   }
-
-
 
   myBlockStyleFn(contentBlock) {
     const type = contentBlock.getType();
@@ -686,8 +499,6 @@ class MyEditor extends React.Component {
     //   console.log('the current document to save is ', this.state.currentDocument);
   }
 
-
-
   onFontSizeDecreaseClick() {
     var font = this.state.styleMap['FONT-SIZE']['fontSize'];
     var fontSize = parseInt(font.slice(0, font.indexOf('p')));
@@ -764,16 +575,11 @@ class MyEditor extends React.Component {
   onAlertOpen() {
     this.setState({alertOpen: !this.state.saved});
   }
-
-
+  
   onCollabSubmit() {
     console.log("DOCID", this.props.match.params.docId);
     console.log("NEWCOLLAB", this.state.newCollaborators);
-<<<<<<< HEAD
     fetch(baseURL+'documents/add/collaborator/'+this.props.match.params.docId, {
-=======
-    fetch(baseURL+'/documents/add/collaborator/'+this.props.match.params.docId, {
->>>>>>> 2c3a364de6706ac41c1e4d74b19dcf4275328df1
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -785,21 +591,10 @@ class MyEditor extends React.Component {
 
       })
     })
-<<<<<<< HEAD
-    .then((response) => {
-      console.log('response from add collabs ', response);
-      return response.json()
-    })
-    .then((resp) => {
-      console.log('respose json is add collabs ', resp);
-=======
-
     .then((response) => {
       return response.json()
     })
     .then((resp) => {
-      //   console.log('respose json is add collabs ', resp);
->>>>>>> 2c3a364de6706ac41c1e4d74b19dcf4275328df1
       this.setState({
         collaborators: resp.document.collaborators, collabModalOpen: false
         // newPassword: resp.document.password
@@ -809,10 +604,6 @@ class MyEditor extends React.Component {
       console.log('error in add collabs', err)
       this.setState({collabModalOpen: false});
       alert(`error adding collaborators ${this.state.newCollaborators}`)
-<<<<<<< HEAD
-=======
-
->>>>>>> 2c3a364de6706ac41c1e4d74b19dcf4275328df1
     })
   }
 
