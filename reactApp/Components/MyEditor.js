@@ -24,8 +24,8 @@ var Mousetrap = require('mousetrap');
 
 import io from 'socket.io-client'
 
-// const baseURL = 'http://be747dfd.ngrok.io'
-const baseURL = 'http://localhost:3000'
+const baseURL = 'http://be747dfd.ngrok.io'
+// const baseURL = 'http://localhost:3000'
 
 const styleMap = {
   'BOLD': {
@@ -134,8 +134,8 @@ class MyEditor extends React.Component {
     this.previousHighlight = null; //means you dont have a selection/highlight but can still ahv ea cursor
 
     //doing socket stuff over the constructur but can also do componentdid mount.... but constructor hapepsn before the didmount
-    // this.socket = io.connect('http://be747dfd.ngrok.io')
-    this.socket = io.connect('http://localhost:3000');
+    this.socket = io.connect('http://be747dfd.ngrok.io')
+    // this.socket = io.connect('http://localhost:3000');
 
     //listen for a response from server to confirm your entry to this room
     this.socket.on('welcome', ({doc}) => {
