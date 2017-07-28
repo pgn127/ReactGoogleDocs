@@ -349,33 +349,7 @@ router.post('/documents/new/:authorId', function(req,res) {
 
 })
 
-//TODO: createa  route that will be used when user adds a collaborator to the document, wait to see how we do this in the ui
-router.post('/documents/addCollaborator/:authorId', function(req,res) {
-    // console.log('entered new docs route');
-    //  var userId = req.params.authorId;
-    //  var docTitle = req.body.title;
-    //
-    //  var newDocument = new Document({
-    //      title: docTitle ,
-    //      author: userId,
-    //      collaborators: [userId],
-    //      shareLink: 'sharelink.com',
-    //     //  password: '',
-    //      dateCreated: Date.now().toString(),
-    //      })
-    //
-    //
-    //  newDocument.save(function(err, doc) {
-    //      if(err){
-    //          console.log('error saving new doc', err);
-    //          res.status(400).json({error: err})
-    //      } else {
-    //          console.log('successful save', doc);
-    //          res.status(200).json({success: true, document: doc}) //if document save is successful, send successful response with the document
-    //      }
-    //  })
 
-})
 
 
 module.exports = router;
