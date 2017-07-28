@@ -530,8 +530,9 @@ class MyEditor extends React.Component {
     console.log("DOCID", this.props.match.params.docId);
     console.log("NEWCOLLAB", this.state.newCollaborators);
 
-    if(this.state.newCollaborators.length ==0) {
+    if(!this.state.newCollaborators || this.state.newCollaborators.length==0) {
         alert('No emails entered! Be sure to press enter after each email.')
+        this.setState({collabModalOpen: false, newCollaborators: []})
         return;
     }
     fetch(baseURL+'documents/add/collaborator/'+this.props.match.params.docId, {
@@ -559,24 +560,26 @@ class MyEditor extends React.Component {
           })
           let alertMessage = '';
           if(resp.added.length === 0){
-               alertMessage += 'No collaborators added. '
+               alertMessage += 'No collaborators added. One or more emails may not be registered.  '
           } else {
-              alertMessage += `Success! ${resp.added} are now collaborators!`
+              alertMessage += `Success! ${resp.added} are now collaborators!   `
           }
           if(resp.notAdded.length >0) {
-              alertMessage += `Collaborator(s) with email(s) ${resp.notAdded}already exists`
+              alertMessage += `Collaborator(s) with email(s) ${resp.notAdded}already exists. `
           }
+          console.log(' alerting this alert message', alertMessage);
           alert(alertMessage);
       } else {
           console.log('error in collab submit ', resp.error);
           throw new Error(resp.error)
+        // throw new Error('hi')
       }
     })
     .catch((err)=> {
       console.log('error in add collabs', err)
-      this.setState({collabModalOpen: false});
 
-      alert(`error adding collaborators ${this.state.newCollaborators} ${err}`)
+      this.setState({collabModalOpen: false, newCollaborators: []});
+      alert(err)
 
     })
   }
@@ -663,7 +666,7 @@ class MyEditor extends React.Component {
                         placeholder="collaborator"
                         value={this.state.newCollaborator}
                         onKeyDown={(e) => {
-                            if(e.key === 'Enter'){
+                            if(e.key === 'Enter' && this.state.newCollaborator !== ''){
                                 e.preventDefault()
                                 var updatedCollaborators = this.state.newCollaborators.concat([this.state.newCollaborator]);
                                 this.setState({newCollaborator: '', newCollaborators: updatedCollaborators})

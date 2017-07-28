@@ -210,13 +210,16 @@ router.post('/documents/add/collaborator/:documentId', function(req, res){
 
                 } else {
                     console.log('error no users found in update collabs users.length==0');
-                    throw new Error('One or more of those emails were not valid'+err)
+                    res.status(500).json({success: false, error: 'One or more of those emails were not valid'})
+                    // throw new Error('One or more of those emails were not valid')
                 }
             })
             .catch(err => {
+                console.log('caught error in  catch find of users ', err);
                 throw new Error('Mongo Error: Unable to find user with email.'+err)
             })
         } else {
+            console.log('caught error in the case where !doc is true');
             throw new Error('Unable to find document. Cannot add collaborators.')
         }
     })
