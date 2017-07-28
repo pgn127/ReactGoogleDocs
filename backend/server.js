@@ -91,7 +91,7 @@ mongoose.connect(process.env.MONGODB_URI);
 //   console.log('Backend server for Electron App running on port 3000!')
 // })
 // const io = require('socket.io')(server);
-server.listen(3000, function () {
+server.listen(process.env.PORT || 3000, function () {
   console.log('Backend server for Electron App running on port 3000!')
 })
 

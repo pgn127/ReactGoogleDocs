@@ -161,74 +161,70 @@ router.get('/documents/collaborate/:userId', function(req,res) {
 })
 
 router.post('/documents/add/collaborator/:documentId', function(req, res){
-    res.status(500).json({success: false, added: '', notAdded: ''})
-})
-// router.post('/documents/add/collaborator/:documentId', function(req, res){
-//     console.log('entered router collaborater route');
-//     var docId = req.params.documentId;
-//     var collaboratorEmails = []
-//     // collaboratorEmails.push(req.body.collaboratorEmails)
-//     var collaboratorEmails = req.body.collaboratorEmails;
-//     var duplicateEmails =[];
-//     Document.findById(docId)
-//     // .populate('collaborators')
-//     .populate('author')
-//     .exec()
-//     .catch(err => {
-//         console.log('error in first catch of collabs');
-//         throw new Error('Mongo Error. Cant add collaborators')
-//     })
-//     .then((doc) => {
-//         if(doc) {
-//             let currentCollaborators = doc.collaborators;
-//             let newCollaboratorEmails = ''//[];
-//             User.find({email: { $in: collaboratorEmails}}).exec()
-//             .then(users => {
-//                 if(users && users.length>0){
-//                     users.forEach((user) => {
-//                         var userRef = mongoose.Types.ObjectId(user._id);
-//                         var alreadyExists = currentCollaborators.some((collaborator) => {
-//                             return JSON.stringify(collaborator) === JSON.stringify(userRef)
-//                         })
-//                         if(!alreadyExists) {
-//                             // newCollaboratorEmails.push(user.email);
-//                             newCollaboratorEmails += `${user.email} `
-//                             currentCollaborators.push(userRef)
-//                         } else {
-//                             duplicateEmails.push(user.email);
-//                         }
-//                         doc.title = doc.title;
-//                         doc.content = doc.content;
-//                         doc.collaborators = currentCollaborators;
-//                         doc.password = doc.password;
-//                         doc.save()
-//                         .then(doc => {
-//                             console.log('successful save doc');
-//                             res.status(200).json({success: true, document: updatedDoc, added: newCollaboratorEmails, notAdded: duplicateEmails})
-//                         })
-//                         .catch(err => {
-//                             console.log('error saving doc after added collabs', err);
-//                             throw new Error('Unable to update collaborators.'+err)
-//                         })
-//
-//                     })
-//                 } else {
-//                     console.log('error no users found in update collabs users.length==0');
-//                     throw new Error('One or more of those emails were not valid'+err)
-//                 }
-//             })
-//             .catch(err => {
-//                 throw new Error('Mongo Error: Unable to find user with email.'+err)
-//             })
-//         } else {
-//             throw new Error('Unable to find document. Cannot add collaborators.')
-//         }
-//     })
-//
-//     .catch((err) => {
-//         console.log('errors with collaborator fell to last catch', err);
-//         res.status(500).json({success: false, error: err})
-//     })
+    console.log('entered router collaborater route');
+    var docId = req.params.documentId;
+    var collaboratorEmails = []
+    // collaboratorEmails.push(req.body.collaboratorEmails)
+    var collaboratorEmails = req.body.collaboratorEmails;
+    var duplicateEmails = '';
+    let newCollaboratorEmails = '';
+    Document.findById(docId)
+    // .populate('collaborators')
+    .populate('author')
+    .exec()
+    .catch(err => {
+        console.log('error in first catch of collabs');
+        throw new Error('Mongo Error. Cant add collaborators')
+    })
+    .then((doc) => {
+        if(doc) {
+            let currentCollaborators = doc.collaborators;
+            User.find({email: { $in: collaboratorEmails}}).exec()
+            .then(users => {
+                if(users && users.length>0){
+                    users.forEach((user) => {
+                        var userRef = mongoose.Types.ObjectId(user._id);
+                        var alreadyExists = currentCollaborators.some((collaborator) => {
+                            return JSON.stringify(collaborator) === JSON.stringify(userRef)
+                        })
+                        if(!alreadyExists) {
+                            newCollaboratorEmails+= `${user.email}`;
+                            currentCollaborators.push(userRef)
+                        } else {
+                            duplicateEmails+= `${user.email} `;
+                        }
+                        doc.title = doc.title;
+                        doc.content = doc.content;
+                        doc.collaborators = currentCollaborators;
+                        doc.password = doc.password;
+                        doc.save()
+                        .then(doc => {
+                            console.log('successful save doc');
+                            res.status(200).json({success: true, document: updatedDoc, added: newCollaboratorEmails, notAdded: duplicateEmails})
+                        })
+                        .catch(err => {
+                            console.log('error saving doc after added collabs', err);
+                            throw new Error('Unable to update collaborators.'+err)
+                        })
+
+                    })
+                } else {
+                    console.log('error no users found in update collabs users.length==0');
+                    throw new Error('One or more of those emails were not valid'+err)
+                }
+            })
+            .catch(err => {
+                throw new Error('Mongo Error: Unable to find user with email.'+err)
+            })
+        } else {
+            throw new Error('Unable to find document. Cannot add collaborators.')
+        }
+    })
+
+    .catch((err) => {
+        console.log('errors with collaborator fell to last catch', err);
+        res.status(500).json({success: false, error: err})
+    })
 
     // Document.findById(docId, function(err, doc) {
     //     if(err){
