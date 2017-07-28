@@ -172,58 +172,53 @@ router.post('/documents/add/collaborator/:documentId', function(req, res){
     // .populate('collaborators')
     .populate('author')
     .exec()
+    .catch(err => {
+        console.log('error in first catch of collabs');
+        throw new Error('Mongo Error. Cant add collaborators')
+    })
     .then((doc) => {
         if(doc) {
-            // console.log('doc found ', doc);
-            const currentCollaborators = doc.collaborators;
-            User.find({email: { $in: collaboratorEmails}}, function(err, users){
-                console.log('enet4ed user find collaborat emails are ', collaboratorEmails);
-                if(err){
-                    console.log('error funding users with those emails ', err);
-                    res.status(500).json({success: false, error: err})
-                } else {
-                    if(users && users.length>0){
-                        // console.log('users were found ', users);
-                        users.forEach((user) => {
-                            // console.log('looking at user ', user);
-                            var userRef = mongoose.Types.ObjectId(user._id);
-                            var alreadyExists = currentCollaborators.some((collaborator) => {
-                                console.log('checking if ', userRef, 'matches ', collaborator);
-                                return JSON.stringify(collaborator) === JSON.stringify(userRef)
-                            })
-                            console.log('alreadyExists for the the user ref ', userRef, 'is ', alreadyExists);
-                            if(!alreadyExists) {
-                                currentCollaborators.push(userRef)
-                            }
-
-                            doc.title = doc.title;
-                            doc.content = doc.content;
-                            doc.collaborators = currentCollaborators;
-                            doc.password = doc.password;
-                            doc.save(function(err, updatedDoc) {
-                                if(err){
-                                    console.log('error saving doc after added collabs', err);
-                                    res.status(400).json({success: false, error: err})
-                                } else {
-                                    console.log('successful ADD collabs', updatedDoc);
-                                    res.status(200).json({success: true, document: updatedDoc}) //if document update is successful, send successful response with the document
-                                }
-                            })
+            return User.find({email: { $in: collaboratorEmails}}).exec()
+            .then(users => {
+                if(users && users.length>0){
+                    users.forEach((user) => {
+                        var userRef = mongoose.Types.ObjectId(user._id);
+                        var alreadyExists = currentCollaborators.some((collaborator) => {
+                            return JSON.stringify(collaborator) === JSON.stringify(userRef)
                         })
-                    } else {
-                        console.log('couldnt find any users with those emails ');
-                        res.status(400).json({success: false})
-                    }
-                }
-            });
-        } else {
-            console.log('document not found, cant update 1', err);
-            res.status(500).json({success: false, error: err})
-        }
+                        if(!alreadyExists) {
+                            currentCollaborators.push(userRef)
+                        }
+                        doc.title = doc.title;
+                        doc.content = doc.content;
+                        doc.collaborators = currentCollaborators;
+                        doc.password = doc.password;
+                        doc.save()
+                        .then(doc => {
+                            console.log('successful save doc');
+                            res.status(200).json({success: true, document: updatedDoc})
+                        })
+                        .catch(err => {
+                            console.log('error saving doc after added collabs', err);
+                            throw new Error('Unable to update collaborators.'+err)
+                        })
 
+                    })
+                } else {
+                    console.log('error no users found in update collabs users.length==0');
+                    throw new Error('One or more of those emails were not valid'+err)
+                }
+            })
+            .catch(err => {
+                throw new Error('Mongo Error: Unable to find user with email.'+err)
+            })
+        } else {
+            throw new Error('Unable to find document. Cannot add collaborators.')
+        }
     })
+
     .catch((err) => {
-        console.log('document not found, cant update 2', err);
+        console.log('errors with collaborator fell to last catch', err);
         res.status(500).json({success: false, error: err})
     })
 
@@ -358,33 +353,7 @@ router.post('/documents/new/:authorId', function(req,res) {
 
 })
 
-//TODO: createa  route that will be used when user adds a collaborator to the document, wait to see how we do this in the ui
-router.post('/documents/addCollaborator/:authorId', function(req,res) {
-    // console.log('entered new docs route');
-    //  var userId = req.params.authorId;
-    //  var docTitle = req.body.title;
-    //
-    //  var newDocument = new Document({
-    //      title: docTitle ,
-    //      author: userId,
-    //      collaborators: [userId],
-    //      shareLink: 'sharelink.com',
-    //     //  password: '',
-    //      dateCreated: Date.now().toString(),
-    //      })
-    //
-    //
-    //  newDocument.save(function(err, doc) {
-    //      if(err){
-    //          console.log('error saving new doc', err);
-    //          res.status(400).json({error: err})
-    //      } else {
-    //          console.log('successful save', doc);
-    //          res.status(200).json({success: true, document: doc}) //if document save is successful, send successful response with the document
-    //      }
-    //  })
 
-})
 
 
 module.exports = router;

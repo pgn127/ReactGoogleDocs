@@ -269,7 +269,7 @@ this.setState({editorState: editorState, saved: false})
           //accept selection changes the editorstate to have the previous highlight selection- turn off where the old highlight was,
           editorState = EditorState.acceptSelection(editorState, this.previousHighlight)
           //switch to old editorstate
-          editorState = RichUtils.toggleInlineStyle(editorState, 'RED'); //TODO : turn off style on the old selection since we had turned this on previously
+          editorState = RichUtils.toggleInlineStyle(editorState, this.state.userColor); //TODO : turn off style on the old selection since we had turned this on previously
 
       editorState = EditorState.acceptSelection(editorState, selection)
       //switch back to new selection by applying 'selection' (that we previously saved before overwirting ) to the editorState
@@ -307,14 +307,10 @@ this.setState({editorState: editorState, saved: false})
         }
       }
     } else {
-      console.log('it was a hgihlight');
       editorState = RichUtils.toggleInlineStyle(editorState, this.state.userColor);
       this.previousHighlight = editorState.getSelection(); //set previous heighlight  to be newest selection, if theres no new highlight this seems to not even  happen
 
     }
-
-    // this.setState({editorState: editorState, saved: false})
-    console.log("OnChange");
     // var currentContent = convertToRaw(editorState.getCurrentContent()); //returns content state out of the editor state
     // var newContentHistory = this.state.contentHistory.slice();
     // newContentHistory.push(currentContent);
@@ -337,13 +333,6 @@ this.setState({editorState: editorState, saved: false})
 
   }
   componentWillMount(){
-    // this.setState({userColor: })
-    // var userIndex = _.findIndex(this.state.online, function(user) {
-    //      return user._id === this.props.store.get('user')._id;
-    //  })
-    //  var userColor = colors[userIndex];
-
-    //  this.setState({userColor: userColor})
 
     fetch(baseURL+'/documents/'+this.props.match.params.docId)
     .then((response) => {
@@ -436,6 +425,11 @@ this.setState({editorState: editorState, saved: false})
   }
 
 
+
+
+
+
+
   onSave(){
     var newContent = JSON.stringify(convertToRaw(this.state.editorState.getCurrentContent()));
 
@@ -443,9 +437,9 @@ this.setState({editorState: editorState, saved: false})
     contentState.date = new Date();
     contentState.creator = this.props.store.get('user').name;
     contentState = JSON.stringify(contentState);
-    // var newContentHistory = this.state.contentHistory.slice();
-    // newContentHistory.push(contentState);
-    this.setState({contentHistory: this.state.contentHistory.concat([contentState])}, () => {
+    var newContentHistory = this.state.contentHistory.slice();
+    newContentHistory.push(contentState);
+    this.setState({contentHistory: newContentHistory}, () => {
       this.socket.emit('newContentHistory', this.state.contentHistory);
     });
 
@@ -546,21 +540,25 @@ this.setState({editorState: editorState, saved: false})
 
       })
     })
-
     .then((response) => {
       return response.json()
     })
     .then((resp) => {
       //   console.log('respose json is add collabs ', resp);
-      this.setState({
-        collaborators: resp.document.collaborators, collabModalOpen: false
-        // newPassword: resp.document.password
-      })
+      if(resp.success){
+          this.setState({
+              collaborators: resp.document.collaborators, collabModalOpen: false, newCollaborators: []
+              // newPassword: resp.document.password
+          })
+      } else {
+          console.log('error in collab submit ', resp.error);
+          throw new Error(resp.error)
+      }
     })
     .catch((err)=> {
       console.log('error in add collabs', err)
       this.setState({collabModalOpen: false});
-      alert(`error adding collaborators ${this.state.newCollaborators}`)
+      alert(`error adding collaborators ${this.state.newCollaborators} ${err}`)
 
     })
   }
@@ -716,7 +714,7 @@ this.setState({editorState: editorState, saved: false})
                             label="Revision History"
                             onClick={this.handleToggle.bind(this)}
                         />
-                        <Drawer width={200} openSecondary={true} open={this.state.drawerOpen} >
+                        <Drawer width={300} openSecondary={true} open={this.state.drawerOpen} >
                             <AppBar title="Revisions" />
                             <div style={{textAlign: 'center'}} width={200}>
                                 <List style={{paddingLeft: '15px', paddingRight: '10px'}}>
