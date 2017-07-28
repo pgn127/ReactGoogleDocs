@@ -16,8 +16,12 @@ import Dialog from 'material-ui/Dialog';
 import FlatButton from 'material-ui/FlatButton';
 import TextField from 'material-ui/TextField';
 
-// const baseURL = 'http://localhost:3000'
-const baseURL = 'https://reactgoogledocs.herokuapp.com'
+
+//const baseURL = 'http://localhost:3000';
+//const baseURL = 'http://b9a62ead.ngrok.io';
+const baseURL = 'https://reactgoogledocs.herokuapp.com';
+
+
 
 class Directory extends React.Component {
   constructor(props){
