@@ -6,6 +6,10 @@ var Document = models.Document;
 var User = models.User;
 //import {TodoItem} from '../models/TodoItem';
 
+function uniq(a) {
+   return Array.from(new Set(a));
+}
+
 var bodyParser = require('body-parser');
 router.use(bodyParser.urlencoded({extended: false}));
 router.use(bodyParser.json());
@@ -156,72 +160,75 @@ router.get('/documents/collaborate/:userId', function(req,res) {
     })
 })
 
-
 router.post('/documents/add/collaborator/:documentId', function(req, res){
-    console.log('entered router collaborater route');
-    var docId = req.params.documentId;
-    var collaboratorEmails = []
-    // collaboratorEmails.push(req.body.collaboratorEmails)
-    var collaboratorEmails = req.body.collaboratorEmails;
-
-    Document.findById(docId)
-    // .populate('collaborators')
-    .populate('author')
-    .exec()
-    .then((doc) => {
-        if(doc) {
-            // console.log('doc found ', doc);
-            const currentCollaborators = doc.collaborators;
-            User.find({email: { $in: collaboratorEmails}}, function(err, users){
-                console.log('enet4ed user find collaborat emails are ', collaboratorEmails);
-                if(err){
-                    console.log('error funding users with those emails ', err);
-                    res.status(500).json({success: false, error: err})
-                } else {
-                    if(users && users.length>0){
-                        // console.log('users were found ', users);
-                        users.forEach((user) => {
-                            // console.log('looking at user ', user);
-                            var userRef = mongoose.Types.ObjectId(user._id);
-                            var alreadyExists = currentCollaborators.some((collaborator) => {
-                                console.log('checking if ', userRef, 'matches ', collaborator);
-                                return JSON.stringify(collaborator) === JSON.stringify(userRef)
-                            })
-                            console.log('alreadyExists for the the user ref ', userRef, 'is ', alreadyExists);
-                            if(!alreadyExists) {
-                                currentCollaborators.push(userRef)
-                            }
-
-                            doc.title = doc.title;
-                            doc.content = doc.content;
-                            doc.collaborators = currentCollaborators;
-                            doc.password = doc.password;
-                            doc.save(function(err, updatedDoc) {
-                                if(err){
-                                    console.log('error saving doc after added collabs', err);
-                                    res.status(400).json({success: false, error: err})
-                                } else {
-                                    console.log('successful ADD collabs', updatedDoc);
-                                    res.status(200).json({success: true, document: updatedDoc}) //if document update is successful, send successful response with the document
-                                }
-                            })
-                        })
-                    } else {
-                        console.log('couldnt find any users with those emails ');
-                        res.status(400).json({success: false})
-                    }
-                }
-            });
-        } else {
-            console.log('document not found, cant update 1', err);
-            res.status(500).json({success: false, error: err})
-        }
-
-    })
-    .catch((err) => {
-        console.log('document not found, cant update 2', err);
-        res.status(500).json({success: false, error: err})
-    })
+    res.status(500).json({success: false, added: '', notAdded: ''})
+})
+// router.post('/documents/add/collaborator/:documentId', function(req, res){
+//     console.log('entered router collaborater route');
+//     var docId = req.params.documentId;
+//     var collaboratorEmails = []
+//     // collaboratorEmails.push(req.body.collaboratorEmails)
+//     var collaboratorEmails = req.body.collaboratorEmails;
+//     var duplicateEmails =[];
+//     Document.findById(docId)
+//     // .populate('collaborators')
+//     .populate('author')
+//     .exec()
+//     .catch(err => {
+//         console.log('error in first catch of collabs');
+//         throw new Error('Mongo Error. Cant add collaborators')
+//     })
+//     .then((doc) => {
+//         if(doc) {
+//             let currentCollaborators = doc.collaborators;
+//             let newCollaboratorEmails = ''//[];
+//             User.find({email: { $in: collaboratorEmails}}).exec()
+//             .then(users => {
+//                 if(users && users.length>0){
+//                     users.forEach((user) => {
+//                         var userRef = mongoose.Types.ObjectId(user._id);
+//                         var alreadyExists = currentCollaborators.some((collaborator) => {
+//                             return JSON.stringify(collaborator) === JSON.stringify(userRef)
+//                         })
+//                         if(!alreadyExists) {
+//                             // newCollaboratorEmails.push(user.email);
+//                             newCollaboratorEmails += `${user.email} `
+//                             currentCollaborators.push(userRef)
+//                         } else {
+//                             duplicateEmails.push(user.email);
+//                         }
+//                         doc.title = doc.title;
+//                         doc.content = doc.content;
+//                         doc.collaborators = currentCollaborators;
+//                         doc.password = doc.password;
+//                         doc.save()
+//                         .then(doc => {
+//                             console.log('successful save doc');
+//                             res.status(200).json({success: true, document: updatedDoc, added: newCollaboratorEmails, notAdded: duplicateEmails})
+//                         })
+//                         .catch(err => {
+//                             console.log('error saving doc after added collabs', err);
+//                             throw new Error('Unable to update collaborators.'+err)
+//                         })
+//
+//                     })
+//                 } else {
+//                     console.log('error no users found in update collabs users.length==0');
+//                     throw new Error('One or more of those emails were not valid'+err)
+//                 }
+//             })
+//             .catch(err => {
+//                 throw new Error('Mongo Error: Unable to find user with email.'+err)
+//             })
+//         } else {
+//             throw new Error('Unable to find document. Cannot add collaborators.')
+//         }
+//     })
+//
+//     .catch((err) => {
+//         console.log('errors with collaborator fell to last catch', err);
+//         res.status(500).json({success: false, error: err})
+//     })
 
     // Document.findById(docId, function(err, doc) {
     //     if(err){
@@ -287,6 +294,8 @@ router.post('/documents/save/:documentId', function(req,res) {
     var docPassword = req.body.password;
     var docContent = req.body.content;
     var docCollaborators = req.body.collaborators;
+    var docContentHistory = req.body.contentHistory;
+    console.log('doc id received in save ', docId);
 
     Document.findById(docId, function(err, doc) {
         if(err){
@@ -298,6 +307,9 @@ router.post('/documents/save/:documentId', function(req,res) {
                 doc.content = docContent || doc.content;
                 doc.collaborators = docCollaborators || doc.collaborators;
                 doc.password = docPassword || doc.password;
+                doc.contentHistory = docContentHistory || doc.contentHistory;
+                doc.contentHistory = uniq(doc.contentHistory);
+                console.log("Routes", doc.contentHistory);
                 doc.save(function(err, updatedDoc) {
                     if(err){
                         console.log('error updating  doc', err);
