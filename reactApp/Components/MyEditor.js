@@ -28,7 +28,7 @@ import _ from 'underscore';
 
 import io from 'socket.io-client'
 
-// const baseURL = 'http://be747dfd.ngrok.io'
+// const baseURL = 'http://localhost:3000'
 const baseURL = 'https://reactgoogledocs.herokuapp.com'
 
 const styleMap = {
@@ -528,6 +528,10 @@ this.setState({editorState: editorState, saved: false})
   onCollabSubmit() {
     console.log("DOCID", this.props.match.params.docId);
     console.log("NEWCOLLAB", this.state.newCollaborators);
+    if(this.state.newCollaborators.length ==0) {
+        alert('No emails entered! Be sure to press enter after each email.')
+        return;
+    }
     fetch(baseURL+'/documents/add/collaborator/'+this.props.match.params.docId, {
       method: 'POST',
       credentials: 'include',
@@ -551,13 +555,13 @@ this.setState({editorState: editorState, saved: false})
               // newPassword: resp.document.password
           })
           let alertMessage = '';
-          if(resp.added.length == 0){
-              alertMessage += 'No collaborators added.'
+          if(resp.added.length === 0){
+               alertMessage += 'No collaborators added. '
           } else {
               alertMessage += `Success! ${resp.added} are now collaborators!`
           }
-          if(resp.notAdded.length == 0) {
-              alertMessage += `${resp.notAdded} are already collaborators`
+          if(resp.notAdded.length >0) {
+              alertMessage += `Collaborator(s) with email(s) ${resp.notAdded}already exists`
           }
           alert(alertMessage);
       } else {

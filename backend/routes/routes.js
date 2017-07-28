@@ -173,7 +173,7 @@ router.post('/documents/add/collaborator/:documentId', function(req, res){
     .populate('author')
     .exec()
     .catch(err => {
-        console.log('error in first catch of collabs');
+        console.log('error in first catch of collabs', err);
         throw new Error('Mongo Error. Cant add collaborators')
     })
     .then((doc) => {
@@ -193,12 +193,13 @@ router.post('/documents/add/collaborator/:documentId', function(req, res){
                         } else {
                             duplicateEmails+= `${user.email} `;
                         }
+                        })
                         doc.title = doc.title;
                         doc.content = doc.content;
                         doc.collaborators = currentCollaborators;
                         doc.password = doc.password;
                         doc.save()
-                        .then(doc => {
+                        .then(updatedDoc => {
                             console.log('successful save doc');
                             res.status(200).json({success: true, document: updatedDoc, added: newCollaboratorEmails, notAdded: duplicateEmails})
                         })
@@ -207,7 +208,6 @@ router.post('/documents/add/collaborator/:documentId', function(req, res){
                             throw new Error('Unable to update collaborators.'+err)
                         })
 
-                    })
                 } else {
                     console.log('error no users found in update collabs users.length==0');
                     throw new Error('One or more of those emails were not valid'+err)

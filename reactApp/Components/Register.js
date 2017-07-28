@@ -11,7 +11,8 @@ const style = {
   margin: 12,
 };
 
-const baseURL = 'https://reactgoogledocs.herokuapp.com'//'http://localhost:3000'
+const baseURL = 'https://reactgoogledocs.herokuapp.com'//
+// const baseURL = 'http://localhost:3000'
 
 export default class Register extends React.Component {
   constructor(props) {
