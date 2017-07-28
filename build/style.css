@@ -22,6 +22,9 @@ html, body {
     display: flex;
     flex-wrap:  nowrap;
 }
+.directoryDocTitle{
+    font-size: 20px;
+}
 
 .documentControls {
     display: flex;
