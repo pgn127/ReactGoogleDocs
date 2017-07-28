@@ -56,7 +56,21 @@ const styleMap = {
   'RED': {
     backgroundColor:
     'red'
-  }
+},
+'orange': {
+  backgroundColor:
+  'orange'
+},
+'red' : {
+    backgroundColor:
+    'red'
+},
+'green' : {
+    backgroundColor:
+    'green'
+},
+
+
 };
 
 const blockRenderMap = Map({
@@ -73,6 +87,10 @@ const blockRenderMap = Map({
 
 const colors = ['red', 'orange', 'yellow', 'green', 'blue', 'violet']
 
+
+function uniq(a) {
+   return Array.from(new Set(a));
+}
 // Include 'paragraph' as a valid block and updated the unstyled element but
 // keep support for other draft default block types
 const extendedBlockRenderMap = DefaultDraftBlockRenderMap.merge(blockRenderMap);
@@ -92,6 +110,7 @@ class MyEditor extends React.Component {
       collabModalOpen: false,
       newCollaborators: [],
       online: [],
+      contentHistory: [],
       userColor: 'black',
       newCollaborator: '',
       styleMap: {
@@ -134,9 +153,6 @@ class MyEditor extends React.Component {
     }
     this.focus = () => this.refs.editor.focus();
     this.previousHighlight = null; //means you dont have a selection/highlight but can still ahv ea cursor
-
-    //doing socket stuff over the constructur but can also do componentdid mount.... but constructor hapepsn before the didmount
-    // this.socket = io.connect('http://be747dfd.ngrok.io')
     this.socket = io.connect('http://localhost:3000');
 
     //listen for a response from server to confirm your entry to this room
@@ -179,6 +195,14 @@ class MyEditor extends React.Component {
       this.setState({editorState: newEditorState})
 
     })
+
+    this.socket.on('receivedNewContentHistory', contentHistory => {
+     console.log("receivedNewContentHistory 1")
+     contentHistory = uniq(contentHistory);
+     this.setState({contentHistory: contentHistory}, () => {
+       console.log("receivedNewContentHistory", this.state.contentHistory);
+     })
+   })
 
     this.socket.on('receiveNewCursor', (data) => {
         // console.log('in receive of cursor mvoemnt');
@@ -224,7 +248,7 @@ class MyEditor extends React.Component {
   }
   onChange(editorState) {
     //   console.log('on change editorstate ', editorState);
-      this.setState({editorState: editorState, saved: false})
+this.setState({editorState: editorState, saved: false})
       //save current selection
       const selection = editorState.getSelection() //refers to most up to date selection and save it
 
@@ -233,7 +257,7 @@ class MyEditor extends React.Component {
           //accept selection changes the editorstate to have the previous highlight selection- turn off where the old highlight was,
           editorState = EditorState.acceptSelection(editorState, this.previousHighlight)
           //switch to old editorstate
-          editorState = RichUtils.toggleInlineStyle(editorState, 'RED'); //turn off style on the old selection since we had turned this on previously
+          editorState = RichUtils.toggleInlineStyle(editorState, 'RED'); //TODO : turn off style on the old selection since we had turned this on previously
 
           editorState = EditorState.acceptSelection(editorState, selection)
           //switch back to new selection by applying 'selection' (that we previously saved before overwirting ) to the editorState
@@ -282,6 +306,7 @@ class MyEditor extends React.Component {
       var currentContent = convertToRaw(editorState.getCurrentContent()); //returns content state out of the editor state
       this.socket.emit('newContent', JSON.stringify(currentContent)); //emit a newcontent event
 
+
   }
 
   //to ensure something happens righ when component is about to get killed
@@ -293,10 +318,6 @@ class MyEditor extends React.Component {
 
   }
   componentDidMount(){
-    // socket.on('redirect', () => {
-    //     alert("Full");
-    //     this.props.history.push('/directory');
-    // });
     // this.setState({userColor: })
     // var userIndex = _.findIndex(this.state.online, function(user) {
     //      return user._id === this.props.store.get('user')._id;
@@ -396,10 +417,10 @@ class MyEditor extends React.Component {
     ));
   }
 
-  _onTab(e) {
-    const maxDepth = 8;
-    this.onChange(RichUtils.onTab(e, this.state.editorState, maxDepth));
-  }
+
+
+
+
 
 
   onSave(){
@@ -426,16 +447,18 @@ class MyEditor extends React.Component {
     .then((resp) => {
       console.log("saved document", resp.document);
       const contentState = JSON.stringify(convertToRaw(this.state.editorState.getCurrentContent()));
+      var newContentHistory = this.state.contentHistory.slice();
+      newContentHistory.push(contentState);
+      this.setState({contentHistory: newContentHistory}, () => {
+          this.socket.emit('newContentHistory', this.state.contentHistory);
+      });
       var rawContent = this.state.editorState.getCurrentContent();
       var currentDocument = Object.assign({}, resp.document, {content: rawContent})
 
       this.setState({saved: true, currentDocument: currentDocument, title: newTitle, editorState: EditorState.createWithContent(rawContent) })
     })
     .catch((err)=>console.log('error saving doc', err))
-    //   console.log('the current document to save is ', this.state.currentDocument);
   }
-
-
 
   onFontSizeDecreaseClick() {
     var font = this.state.styleMap['FONT-SIZE']['fontSize'];
@@ -477,38 +500,6 @@ class MyEditor extends React.Component {
     this.onChange(RichUtils.onTab(e, this.state.editorState, maxDepth));
   }
 
-
-  onSave(){
-    var newContent = JSON.stringify(convertToRaw(this.state.editorState.getCurrentContent()));
-    // console.log('content that is being saved is ', newContent);
-    var newTitle = this.state.title;
-    fetch(baseURL+'/documents/save/'+this.props.match.params.docId, {
-      method: 'POST',
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        content: newContent,
-        title: newTitle,
-        //   password: newPassword,
-        //   collaborators: newCollaborators
-
-      })
-    })
-    .then((response) => {
-      console.log('response in on save ', response);
-      return response.json()
-    })
-    .then((resp) => {
-      console.log("saved document", resp.document);
-      const contentState = JSON.stringify(convertToRaw(this.state.editorState.getCurrentContent()));
-      var rawContent = this.state.editorState.getCurrentContent();
-      var currentDocument = Object.assign({}, resp.document, {content: rawContent})
-
-      this.setState({saved: true, currentDocument: currentDocument, title: newTitle, editorState: EditorState.createWithContent(rawContent) })
-    })
-    .catch((err)=>console.log('error saving doc', err))
-  }
   onAlertOpen() {
     this.setState({alertOpen: !this.state.saved});
   }
@@ -698,17 +689,39 @@ class MyEditor extends React.Component {
                 </div>
                 <div className="editor">
                     {this.state.top ? (<div style={{position: 'absolute', backgroundColor: this.state.userColor, width: '2px', height: this.state.height, top: this.state.top, left: this.state.left}}></div>) : undefined}
-                        <Editor
-                          customStyleMap={this.state.styleMap}
-                          editorState={this.state.editorState}
-                          onChange={this.onChange.bind(this)}
-                          onTab={this._onTab.bind(this)}
-                          blockRenderMap={extendedBlockRenderMap}
-                          blockStyleFn={this.myBlockStyleFn}
-                        />
-                      </div>
+                    <Editor
+                        customStyleMap={this.state.styleMap}
+                        editorState={this.state.editorState}
+                        onChange={this.onChange.bind(this)}
+                        onTab={this._onTab.bind(this)}
+                        blockRenderMap={extendedBlockRenderMap}
+                        blockStyleFn={this.myBlockStyleFn}
+                    />
+                </div>
+                <div style={{textAlign: 'center'}}>
+                    <div>
+                        <h1>Revision History</h1>
                     </div>
-                  </div>
+                    <List style={{paddingLeft: '15px', paddingRight: '10px'}}>
+                        {this.state.contentHistory.map((content, i) => {
+
+                            return(
+                                <span onClick={() => {
+                                    const contentState = convertFromRaw(JSON.parse(content))
+                                    const newEditorState = EditorState.createWithContent(contentState)
+                                    this.setState({editorState: newEditorState})
+                                }}
+                                    key={i}
+                                    className="collaboratorIcon"
+                                    style={{backgroundColor: 'blue'}}>
+                                    {i + 1}
+                                </span>
+                            )
+                        })}
+                    </List>
+                </div>
+            </div>
+        </div>
                 );
               }
             }
