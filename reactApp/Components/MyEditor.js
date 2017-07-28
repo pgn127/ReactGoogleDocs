@@ -12,15 +12,23 @@ import {List, ListItem} from 'material-ui/List';
 import Dialog from 'material-ui/Dialog';
 import FontIcon from 'material-ui/FontIcon';
 import AppBar from 'material-ui/AppBar';
+import Drawer from 'material-ui/Drawer';
+import Divider from 'material-ui/Divider';
 import TextField from 'material-ui/TextField';
+import Snackbar from 'material-ui/Snackbar';
 import {Editor, EditorState, RichUtils, ContentState, DefaultDraftBlockRenderMap, convertFromRaw, convertToRaw, Modifier} from 'draft-js';
 import { Map } from 'immutable';
 import Popover, {PopoverAnimationVertical} from 'material-ui/Popover';
 import Menu from 'material-ui/Menu';
 import MenuItem from 'material-ui/MenuItem';
 import {Toolbar, ToolbarGroup, ToolbarSeparator, ToolbarTitle} from 'material-ui/Toolbar';
-var Mousetrap = require('mousetrap')
-import _ from 'underscore'
+var Mousetrap = require('mousetrap');
+import _ from 'underscore';
+import PersonAdd from 'material-ui/svg-icons/social/person-add';
+import Delete from 'material-ui/svg-icons/action/delete';
+import RemoveRedEye from 'material-ui/svg-icons/image/remove-red-eye';
+
+
 
 
 import io from 'socket.io-client'
@@ -29,6 +37,7 @@ import io from 'socket.io-client'
 //const baseURL = 'http://localhost:3000'
 //const baseURL = 'http://b9a62ead.ngrok.io'
 const baseURL = 'https://reactgoogledocs.herokuapp.com'
+
 
 const styleMap = {
   'BOLD': {
@@ -58,8 +67,19 @@ const styleMap = {
   'RED': {
     backgroundColor:
     'red'
-
-  }
+  },
+  'orange': {
+    backgroundColor:
+    'orange'
+  },
+  'red' : {
+    backgroundColor:
+    'red'
+  },
+  'green' : {
+    backgroundColor:
+    'green'
+  },
 };
 
 const blockRenderMap = Map({
@@ -77,9 +97,8 @@ const blockRenderMap = Map({
 const colors = ['red', 'orange', 'yellow', 'green', 'blue', 'violet'];
 
 function uniq(a) {
-   return Array.from(new Set(a));
+  return Array.from(new Set(a));
 }
-
 
 // Include 'paragraph' as a valid block and updated the unstyled element but
 // keep support for other draft default block types
@@ -100,8 +119,11 @@ class MyEditor extends React.Component {
       collabModalOpen: false,
       newCollaborators: [],
       online: [],
+      snackBar: false,
       contentHistory: [],
+      drawerOpen: false,
       userColor: 'black',
+      leftMenu: false,
       newCollaborator: '',
       styleMap: {
         'BOLD': {
@@ -156,6 +178,7 @@ class MyEditor extends React.Component {
     this.socket = io.connect("https://reactgoogledocs.herokuapp.com/")
     //this.socket = io.connect("http://localhost:3000")
     // this.socket = io.connect('http://b9a62ead.ngrok.io')
+
 
     //listen for a response from server to confirm your entry to this room
     this.socket.on('welcome', ({doc}) => {
@@ -240,15 +263,23 @@ class MyEditor extends React.Component {
 
 
   }
+
+
+  handleToggle(){
+    this.setState({drawerOpen: !this.state.drawerOpen});
+  }
+
   autoSave(){
     setInterval(this.onSave.bind(this), 30000);
     this.setState({
       autosave: !this.state.autosave,
     })
   }
-  componentWillUnmount(){
-    this.socket.disconnect();
-  }
+  closeSnackbar(){
+      this.setState({
+        snackBar: false,
+      });
+    };
 
   onChange(editorState) {
     //   console.log('on change editorstate ', editorState);
@@ -261,7 +292,7 @@ class MyEditor extends React.Component {
       //accept selection changes the editorstate to have the previous highlight selection- turn off where the old highlight was,
       editorState = EditorState.acceptSelection(editorState, this.previousHighlight)
       //switch to old editorstate
-      editorState = RichUtils.toggleInlineStyle(editorState, 'RED'); //turn off style on the old selection since we had turned this on previously
+      editorState = RichUtils.toggleInlineStyle(editorState, 'RED'); //TODO : turn off style on the old selection since we had turned this on previously
 
       editorState = EditorState.acceptSelection(editorState, selection)
       //switch back to new selection by applying 'selection' (that we previously saved before overwirting ) to the editorState
@@ -310,17 +341,15 @@ class MyEditor extends React.Component {
     var currentContent = convertToRaw(editorState.getCurrentContent());
     this.socket.emit('newContent', JSON.stringify(currentContent));
 
+
   }
 
   //to ensure something happens righ when component is about to get killed
   componentWillUnmount() {
-
     this.socket.emit('disconnect', {userLeft: this.props.store.get('user')});
     this.socket.disconnect();
 
   }
-
-
 
   componentDidMount(){
     fetch(baseURL+'/documents/'+this.props.match.params.docId)
@@ -338,7 +367,7 @@ class MyEditor extends React.Component {
         const contentState = convertFromRaw( JSON.parse(resp.document.content) ) ;
         var currentDocument = Object.assign({}, resp.document, {content: contentState})
         this.setState({saved: false, currentDocument: currentDocument, collaborators: currentDocument.collaborators, title: currentDocument.title, editorState: EditorState.createWithContent(contentState) })
-
+        this.setState({contentHistory: currentDocument.contentHistory || []});
         // socket.emit('room', currentDocument.title);
         this.setState({room: currentDocument.title});
 
@@ -349,8 +378,6 @@ class MyEditor extends React.Component {
     .catch((err)=>console.log('error pulling doc', err));
 
   }
-
-
 
   //USED FOR BOLD, and styles supported by FontStyles.js
   _toggleInlineStyle(inlineStyle) {
@@ -411,16 +438,22 @@ class MyEditor extends React.Component {
     ));
   }
 
-  _onTab(e) {
-    const maxDepth = 8;
-    this.onChange(RichUtils.onTab(e, this.state.editorState, maxDepth));
-  }
-
-
   onSave(){
     var newContent = JSON.stringify(convertToRaw(this.state.editorState.getCurrentContent()));
+
+    var contentState = convertToRaw(this.state.editorState.getCurrentContent());
+    contentState.date = new Date();
+    contentState.creator = this.props.store.get('user').name;
+    contentState = JSON.stringify(contentState);
+    console.log(this.state.contentHistory);
+    var newContentHistory = this.state.contentHistory.slice();
+    newContentHistory.push(contentState);
+    this.setState({contentHistory: newContentHistory}, () => {
+      this.socket.emit('newContentHistory', this.state.contentHistory);
+    });
+
     var newTitle = this.state.title;
-    fetch(baseURL+'documents/save/'+this.props.match.params.docId, {
+    fetch(baseURL+'/documents/save/'+this.props.match.params.docId, {
       method: 'POST',
       headers: {
         "Content-Type": "application/json"
@@ -428,6 +461,7 @@ class MyEditor extends React.Component {
       body: JSON.stringify({
         content: newContent,
         title: newTitle,
+        contentHistory: newContentHistory,
         //   password: newPassword,
         //   collaborators: newCollaborators
 
@@ -439,19 +473,13 @@ class MyEditor extends React.Component {
     })
     .then((resp) => {
       console.log("saved document", resp.document);
-      const contentState = JSON.stringify(convertToRaw(this.state.editorState.getCurrentContent()));
-      var newContentHistory = this.state.contentHistory.slice();
-      newContentHistory.push(contentState);
-      this.setState({contentHistory: newContentHistory}, () => {
-        this.socket.emit('newContentHistory', this.state.contentHistory);
-      });
+
       var rawContent = this.state.editorState.getCurrentContent();
       var currentDocument = Object.assign({}, resp.document, {content: rawContent})
 
-      this.setState({saved: true, currentDocument: currentDocument, title: newTitle, editorState: EditorState.createWithContent(rawContent) })
+      this.setState({saved: true, currentDocument: currentDocument, title: newTitle, snackBar:true, editorState: EditorState.createWithContent(rawContent) })
     })
     .catch((err)=>console.log('error saving doc', err))
-    //   console.log('the current document to save is ', this.state.currentDocument);
   }
 
   onFontSizeDecreaseClick() {
@@ -568,8 +596,26 @@ class MyEditor extends React.Component {
           <AppBar
             title={
               <TextField id="text-field-controlled" inputStyle={this.state.title === 'Untitled Document' ? {color: 'white', fontStyle: 'italic'}: {color: 'white'}} underlineShow={false} value={this.state.title} onChange={this.onTitleEdit.bind(this)} />}
-              onLeftIconButtonTouchTap={this.state.saved ? this.onAlertOk.bind(this): this.onAlertOpen.bind(this)}
+              onLeftIconButtonTouchTap={()=>this.setState({leftMenu: !this.state.leftMenu})}
             />
+            <Drawer
+              docked={false}
+              width={250}
+              desktop={true}
+              menuItemStyle={{marginTop: '10px'}}
+              open={this.state.leftMenu}
+              onRequestChange={(open) => this.setState({leftMenu:open})}
+            >
+              <MenuItem leftIcon={<PersonAdd />} onTouchTap={this.onCollabOpen.bind(this)}>Add a Collaborator</MenuItem>
+              <MenuItem leftIcon={<RemoveRedEye />} onTouchTap={this.autoSave.bind(this)}>View Collaborators</MenuItem>
+              <Divider />
+              <MenuItem onTouchTap={this.autoSave.bind(this)}>Enable Autosave</MenuItem>
+              <Divider />
+              <MenuItem primaryText="Remove" leftIcon={<Delete />} />
+              <MenuItem onTouchTap={this.state.saved ? this.onAlertOk.bind(this): this.onAlertOpen.bind(this)}>Back to Directory</MenuItem>
+              <Divider />
+              <MenuItem onTouchTap={this.autoSave.bind(this)}>Logout</MenuItem>
+        </Drawer>
             <Dialog
               title="Add Collaborators by email"
               modal={true}
@@ -608,11 +654,17 @@ class MyEditor extends React.Component {
 
             {/* <div>{'user is '+this.props.store.get('user').name}</div> */}
             <div className="docContainer">
+              <Snackbar
+                open={this.state.snackBar}
+                message="Document Saved"
+                autoHideDuration={2000}
+                onRequestClose={this.closeSnackbar.bind(this)}
+              />
               {/*  <div className='documentControls'>
               <div style={{display:'flex', flexDirection: 'row'}} > */}
               <Toolbar>
                 <ToolbarGroup firstChild={true}>
-                  <span style={{display: 'flex', alignSelf: 'center', flexDirection:'row'}}>Shared with:</span>
+                  <span style={{display: 'flex', alignSelf: 'center', flexDirection:'row'}}>Online Now:</span>
                   {/* <List style={{paddingLeft: '15px', paddingRight: '10px'}}>
                   {this.state.collaborators.map((user, i) => (
                   <span key={i} className="collaboratorIcon" style={{backgroundColor: randomColor()}}>{'F'}</span>
@@ -640,11 +692,11 @@ class MyEditor extends React.Component {
           {/* </div>
             <div className="rightSideControls"> */}
             <ToolbarGroup lastChild={true}>
-              <RaisedButton
+              {/* <RaisedButton
                 label={"add collaborators"}
                 style={{margin: 5}}
                 primary={true}
-                onTouchTap={this.onCollabOpen.bind(this)}/>
+                onTouchTap={this.onCollabOpen.bind(this)}/> */}
                 <RaisedButton
                   label={this.state.saved ? "Saved" : "Save"}
                   style={{margin: 5}}
@@ -652,10 +704,16 @@ class MyEditor extends React.Component {
                   disabled={this.state.saved}
                   onTouchTap={this.onSave.bind(this)}/>
                   <RaisedButton
+                    label="View Revision History"
+                    primary={true}
+                    style={{margin: 5}}
+                    onClick={this.handleToggle.bind(this)}
+                  />
+                  {/* <RaisedButton
                     label={this.state.autosave ? "Disable Autosave" : "Enable Autosave"}
                     style={{marginLeft: 5}}
                     primary={true}
-                    onTouchTap={this.autoSave.bind(this)}/>
+                    onTouchTap={this.autoSave.bind(this)}/> */}
                   </ToolbarGroup>
                 </Toolbar>
 
@@ -675,6 +733,50 @@ class MyEditor extends React.Component {
                       onToggle={this._toggleBlockType.bind(this)}
                     />
                   </div>
+                  <div className="btn-group">
+                    <Drawer
+                      docked={false}
+                      width={200}
+                      openSecondary={true}
+                      open={this.state.drawerOpen}
+                      onRequestChange={(open) => this.setState({drawerOpen:open})}
+                       >
+                      {/* <AppBar title="Revisions" /> */}
+                      <div style={{textAlign: 'center'}} width={200}>
+                        <List style={{paddingLeft: '15px', paddingRight: '10px'}}>
+                          {this.state.contentHistory && this.state.contentHistory.map((content, i) => {
+                            var contentObject = JSON.parse(content);
+                            var date = new Date(contentObject.date);
+                            var d = date.toISOString().substring(0, 10);
+                            var t = date.toISOString().substring(11, 16);
+                            var creator = contentObject.creator;
+                            return(
+                              <div>
+                                <span onClick={() => {
+                                  console.log(content);
+                                  const contentState = convertFromRaw(JSON.parse(content))
+                                  const newEditorState = EditorState.createWithContent(contentState)
+                                  this.setState({editorState: newEditorState})
+                                }}
+                                key={i}
+                                // className="collaboratorIcon"
+                                // style={{backgroundColor: 'blue'}}
+                                >
+                                  <MenuItem>
+                                    {d + ', ' + t}
+                                    <br />
+                                    Created by: {creator}
+                                    <Divider />
+                                  </MenuItem>
+                                </span>
+                                <br />
+                              </div>
+                            )
+                          })}
+                        </List>
+                      </div>
+                    </Drawer>
+                  </div>
                 </div>
                 <div className="editor">
                   {this.state.top ? (<div style={{position: 'absolute', backgroundColor: this.state.userColor, width: '2px', height: this.state.height, top: this.state.top, left: this.state.left}}></div>) : undefined}
@@ -686,28 +788,6 @@ class MyEditor extends React.Component {
                     blockRenderMap={extendedBlockRenderMap}
                     blockStyleFn={this.myBlockStyleFn}
                   />
-                </div>
-                <div style={{textAlign: 'center'}}>
-                  <div>
-                    <h1>Revision History</h1>
-                  </div>
-                  <List style={{paddingLeft: '15px', paddingRight: '10px'}}>
-                    {this.state.contentHistory.map((content, i) => {
-
-                      return(
-                        <span onClick={() => {
-                          const contentState = convertFromRaw(JSON.parse(content))
-                          const newEditorState = EditorState.createWithContent(contentState)
-                          this.setState({editorState: newEditorState})
-                        }}
-                        key={i}
-                        className="collaboratorIcon"
-                        style={{backgroundColor: 'blue'}}>
-                        {i + 1}
-                      </span>
-                    )
-                  })}
-                </List>
                 </div>
               </div>
             </div>
