@@ -112,7 +112,7 @@ router.get('/documents/owned/:userId', function(req,res) {
                     res.status(500).json({err: err, message: 'Unable to get user information'})
                 } else{
                     if(documents) {
-                        console.log('owned documents found ', documents);
+                        // console.log('owned documents found ', documents);
                         res.status(200).json({documents: documents});
                     } else {
                         console.log('user foudn but had no  owned docuemtns');
@@ -160,18 +160,17 @@ router.get('/documents/collaborate/:userId', function(req,res) {
 router.post('/documents/add/collaborator/:documentId', function(req, res){
     console.log('entered router collaborater route');
     var docId = req.params.documentId;
-    console.log('collab email ', req.body.collaboratorEmails, typeof req.body.collaboratorEmails, typeof req.body);
     var collaboratorEmails = []
     // collaboratorEmails.push(req.body.collaboratorEmails)
-    var collaboratorEmails = req.body.collaboratorEmails; //TODO: make it so that req.body.collaborators comes in already as an array of email strings
-    console.log('collaboratorEmails  from bod ', collaboratorEmails, 'with type ', typeof collaboratorEmails);
+    var collaboratorEmails = req.body.collaboratorEmails;
+
     Document.findById(docId)
     // .populate('collaborators')
     .populate('author')
     .exec()
     .then((doc) => {
         if(doc) {
-            console.log('doc found ', doc);
+            // console.log('doc found ', doc);
             const currentCollaborators = doc.collaborators;
             User.find({email: { $in: collaboratorEmails}}, function(err, users){
                 console.log('enet4ed user find collaborat emails are ', collaboratorEmails);
@@ -180,9 +179,9 @@ router.post('/documents/add/collaborator/:documentId', function(req, res){
                     res.status(500).json({success: false, error: err})
                 } else {
                     if(users && users.length>0){
-                        console.log('users were found ', users);
+                        // console.log('users were found ', users);
                         users.forEach((user) => {
-                            console.log('looking at user ', user);
+                            // console.log('looking at user ', user);
                             var userRef = mongoose.Types.ObjectId(user._id);
                             var alreadyExists = currentCollaborators.some((collaborator) => {
                                 console.log('checking if ', userRef, 'matches ', collaborator);
@@ -288,7 +287,6 @@ router.post('/documents/save/:documentId', function(req,res) {
     var docPassword = req.body.password;
     var docContent = req.body.content;
     var docCollaborators = req.body.collaborators;
-    console.log('doc id received in save ', docId);
 
     Document.findById(docId, function(err, doc) {
         if(err){
@@ -305,7 +303,7 @@ router.post('/documents/save/:documentId', function(req,res) {
                         console.log('error updating  doc', err);
                         res.status(400).json({error: err})
                     } else {
-                        console.log('successful update', updatedDoc);
+                        // console.log('successful update', updatedDoc);
                         res.status(200).json({success: true, document: updatedDoc}) //if document update is successful, send successful response with the document
                     }
                 })
