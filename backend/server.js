@@ -19,6 +19,7 @@ const _ = require('underscore');
 var online = [];
 var colors = ['red', 'orange', 'yellow', 'green', 'blue', 'violet']
 
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(expressValidator());
@@ -128,6 +129,11 @@ io.on('connection', (socket) => {
 socket.on('newContent', stringifiedContent => {
     // console.log('received new content about to emit receivednewcontent');
     socket.broadcast.to(socket.documentRoom).emit('receivedNewContent', stringifiedContent)
+})
+
+socket.on('newContentHistory', contentHistory => {
+  console.log("In socket");
+  io.to(socket.documentRoom).emit('receivedNewContentHistory', contentHistory);
 })
 
 socket.on('cursorMove', selection => {
