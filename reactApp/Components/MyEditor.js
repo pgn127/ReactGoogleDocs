@@ -557,12 +557,12 @@ this.setState({editorState: editorState, saved: false})
           })
           let alertMessage = '';
           if(resp.added.length === 0){
-               alertMessage += 'No collaborators added. '
+               alertMessage += 'No collaborators added. One or more emails may not be registered.  '
           } else {
-              alertMessage += `Success! ${resp.added} are now collaborators! `
+              alertMessage += `Success! ${resp.added} are now collaborators!   `
           }
           if(resp.notAdded.length >0) {
-              alertMessage += `Collaborator(s) with email(s) ${resp.notAdded}already exists`
+              alertMessage += `Collaborator(s) with email(s) ${resp.notAdded}already exists. `
           }
           console.log(' alerting this alert message', alertMessage);
           alert(alertMessage);
@@ -575,7 +575,7 @@ this.setState({editorState: editorState, saved: false})
     .catch((err)=> {
       console.log('error in add collabs', err)
       this.setState({collabModalOpen: false, newCollaborators: []});
-      alert(`error adding collaborators ${this.state.newCollaborators} ${err}`)
+      alert(err)
 
     })
   }

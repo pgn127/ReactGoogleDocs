@@ -210,7 +210,8 @@ router.post('/documents/add/collaborator/:documentId', function(req, res){
 
                 } else {
                     console.log('error no users found in update collabs users.length==0');
-                    throw new Error('One or more of those emails were not valid')
+                    res.status(500).json({success: false, error: 'One or more of those emails were not valid'})
+                    // throw new Error('One or more of those emails were not valid')
                 }
             })
             .catch(err => {
