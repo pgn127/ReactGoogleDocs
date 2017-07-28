@@ -32,7 +32,8 @@ var documentSchema = new Schema({
   password: {
          type: String,
   },
-  dateCreated: String
+  dateCreated: String,
+  contentHistory: []
 })
 var Document = mongoose.model('Document', documentSchema);
 
