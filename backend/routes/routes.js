@@ -6,6 +6,10 @@ var Document = models.Document;
 var User = models.User;
 //import {TodoItem} from '../models/TodoItem';
 
+function uniq(a) {
+   return Array.from(new Set(a));
+}
+
 var bodyParser = require('body-parser');
 router.use(bodyParser.urlencoded({extended: false}));
 router.use(bodyParser.json());
@@ -288,6 +292,7 @@ router.post('/documents/save/:documentId', function(req,res) {
     var docPassword = req.body.password;
     var docContent = req.body.content;
     var docCollaborators = req.body.collaborators;
+    var docContentHistory = req.body.contentHistory;
     console.log('doc id received in save ', docId);
 
     Document.findById(docId, function(err, doc) {
@@ -300,6 +305,9 @@ router.post('/documents/save/:documentId', function(req,res) {
                 doc.content = docContent || doc.content;
                 doc.collaborators = docCollaborators || doc.collaborators;
                 doc.password = docPassword || doc.password;
+                doc.contentHistory = docContentHistory || doc.contentHistory;
+                doc.contentHistory = uniq(doc.contentHistory);
+                console.log("Routes", doc.contentHistory);
                 doc.save(function(err, updatedDoc) {
                     if(err){
                         console.log('error updating  doc', err);

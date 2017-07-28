@@ -12,6 +12,8 @@ import {List, ListItem} from 'material-ui/List';
 import Dialog from 'material-ui/Dialog';
 import FontIcon from 'material-ui/FontIcon';
 import AppBar from 'material-ui/AppBar';
+import Drawer from 'material-ui/Drawer';
+import Divider from 'material-ui/Divider';
 import TextField from 'material-ui/TextField';
 import {Editor, EditorState, RichUtils, ContentState, DefaultDraftBlockRenderMap, convertFromRaw, convertToRaw, Modifier} from 'draft-js';
 import { Map } from 'immutable';
@@ -19,8 +21,9 @@ import Popover, {PopoverAnimationVertical} from 'material-ui/Popover';
 import Menu from 'material-ui/Menu';
 import MenuItem from 'material-ui/MenuItem';
 import {Toolbar, ToolbarGroup, ToolbarSeparator, ToolbarTitle} from 'material-ui/Toolbar';
-var Mousetrap = require('mousetrap')
-import _ from 'underscore'
+var Mousetrap = require('mousetrap');
+import _ from 'underscore';
+
 
 
 import io from 'socket.io-client'
@@ -98,6 +101,7 @@ class MyEditor extends React.Component {
       newCollaborators: [],
       online: [],
       contentHistory: [],
+      drawerOpen: false,
       userColor: 'black',
       newCollaborator: '',
       styleMap: {
@@ -229,6 +233,9 @@ class MyEditor extends React.Component {
 
   }
 
+   handleToggle(){
+     this.setState({drawerOpen: !this.state.drawerOpen});
+   }
 
   autoSave(){
     setInterval(this.onSave.bind(this), 30000);
@@ -342,7 +349,7 @@ class MyEditor extends React.Component {
         const contentState = convertFromRaw( JSON.parse(resp.document.content) ) ;
         var currentDocument = Object.assign({}, resp.document, {content: contentState})
         this.setState({saved: false, currentDocument: currentDocument, collaborators: currentDocument.collaborators, title: currentDocument.title, editorState: EditorState.createWithContent(contentState) })
-
+        this.setState({contentHistory: currentDocument.contentHistory});
         // socket.emit('room', currentDocument.title);
         this.setState({room: currentDocument.title});
 
@@ -425,6 +432,17 @@ class MyEditor extends React.Component {
 
   onSave(){
     var newContent = JSON.stringify(convertToRaw(this.state.editorState.getCurrentContent()));
+
+    var contentState = convertToRaw(this.state.editorState.getCurrentContent());
+    contentState.date = new Date();
+    contentState.creator = this.props.store.get('user').name;
+    contentState = JSON.stringify(contentState);
+    var newContentHistory = this.state.contentHistory.slice();
+    newContentHistory.push(contentState);
+    this.setState({contentHistory: newContentHistory}, () => {
+      this.socket.emit('newContentHistory', this.state.contentHistory);
+    });
+
     var newTitle = this.state.title;
     fetch(baseURL+'/documents/save/'+this.props.match.params.docId, {
       method: 'POST',
@@ -434,6 +452,7 @@ class MyEditor extends React.Component {
       body: JSON.stringify({
         content: newContent,
         title: newTitle,
+        contentHistory: newContentHistory,
         //   password: newPassword,
         //   collaborators: newCollaborators
 
@@ -445,12 +464,15 @@ class MyEditor extends React.Component {
     })
     .then((resp) => {
       console.log("saved document", resp.document);
-      const contentState = JSON.stringify(convertToRaw(this.state.editorState.getCurrentContent()));
-      var newContentHistory = this.state.contentHistory.slice();
-      newContentHistory.push(contentState);
-      this.setState({contentHistory: newContentHistory}, () => {
-        this.socket.emit('newContentHistory', this.state.contentHistory);
-      });
+      // var contentState = convertToRaw(this.state.editorState.getCurrentContent());
+      // contentState.date = new Date();
+      // contentState.creator = this.props.store.get('user').name;
+      // contentState = JSON.stringify(contentState);
+      // var newContentHistory = this.state.contentHistory.slice();
+      // newContentHistory.push(contentState);
+      // this.setState({contentHistory: newContentHistory}, () => {
+      //   this.socket.emit('newContentHistory', this.state.contentHistory);
+      // });
       var rawContent = this.state.editorState.getCurrentContent();
       var currentDocument = Object.assign({}, resp.document, {content: rawContent})
 
@@ -719,6 +741,48 @@ class MyEditor extends React.Component {
                       onToggle={this._toggleBlockType.bind(this)}
                     />
                   </div>
+                  <div className="btn-group">
+                    <RaisedButton
+                      label="Revision History"
+                      onClick={this.handleToggle.bind(this)}
+                    />
+                    <Drawer width={200} openSecondary={true} open={this.state.drawerOpen} >
+                      <AppBar title="Revisions" />
+                      <div style={{textAlign: 'center'}} width={200}>
+                        <List style={{paddingLeft: '15px', paddingRight: '10px'}}>
+                          {this.state.contentHistory.map((content, i) => {
+                            var contentObject = JSON.parse(content);
+                            var date = new Date(contentObject.date);
+                            var d = date.toISOString().substring(0, 10);
+                            var t = date.toISOString().substring(11, 16);
+                            var creator = contentObject.creator;
+                            return(
+                              <div>
+                                <span onClick={() => {
+                                  console.log(content);
+                                  const contentState = convertFromRaw(JSON.parse(content))
+                                  const newEditorState = EditorState.createWithContent(contentState)
+                                  this.setState({editorState: newEditorState})
+                                }}
+                                key={i}
+                                // className="collaboratorIcon"
+                                // style={{backgroundColor: 'blue'}}
+                                >
+                                <MenuItem>
+                                  {d + ', ' + t}
+                                  <br />
+                                  Created by: {creator}
+                                  <Divider />
+                                </MenuItem>
+                              </span>
+                              <br />
+                              </div>
+                          )
+                        })}
+                      </List>
+                      </div>
+                    </Drawer>
+                  </div>
                 </div>
                 <div className="editor">
                   {this.state.top ? (<div style={{position: 'absolute', backgroundColor: this.state.userColor, width: '2px', height: this.state.height, top: this.state.top, left: this.state.left}}></div>) : undefined}
@@ -730,28 +794,6 @@ class MyEditor extends React.Component {
                     blockRenderMap={extendedBlockRenderMap}
                     blockStyleFn={this.myBlockStyleFn}
                   />
-                </div>
-                <div style={{textAlign: 'center'}}>
-                  <div>
-                    <h1>Revision History</h1>
-                  </div>
-                  <List style={{paddingLeft: '15px', paddingRight: '10px'}}>
-                    {this.state.contentHistory.map((content, i) => {
-
-                      return(
-                        <span onClick={() => {
-                          const contentState = convertFromRaw(JSON.parse(content))
-                          const newEditorState = EditorState.createWithContent(contentState)
-                          this.setState({editorState: newEditorState})
-                        }}
-                        key={i}
-                        className="collaboratorIcon"
-                        style={{backgroundColor: 'blue'}}>
-                        {i + 1}
-                      </span>
-                    )
-                  })}
-                </List>
                 </div>
               </div>
             </div>
