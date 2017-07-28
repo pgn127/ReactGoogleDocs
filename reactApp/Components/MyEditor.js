@@ -550,6 +550,16 @@ this.setState({editorState: editorState, saved: false})
               collaborators: resp.document.collaborators, collabModalOpen: false, newCollaborators: []
               // newPassword: resp.document.password
           })
+          let alertMessage = '';
+          if(resp.added.length == 0){
+              alertMessage += 'No collaborators added.'
+          } else {
+              alertMessage += `Success! ${resp.added} are now collaborators!`
+          }
+          if(resp.notAdded.length == 0) {
+              alertMessage += `${resp.notAdded} are already collaborators`
+          }
+          alert(alertMessage);
       } else {
           console.log('error in collab submit ', resp.error);
           throw new Error(resp.error)
