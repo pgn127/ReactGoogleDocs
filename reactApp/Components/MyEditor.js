@@ -19,7 +19,8 @@ import Popover, {PopoverAnimationVertical} from 'material-ui/Popover';
 import Menu from 'material-ui/Menu';
 import MenuItem from 'material-ui/MenuItem';
 import {Toolbar, ToolbarGroup, ToolbarSeparator, ToolbarTitle} from 'material-ui/Toolbar';
-var Mousetrap = require('mousetrap');
+var Mousetrap = require('mousetrap')
+import _ from 'underscore'
 
 
 import io from 'socket.io-client'
@@ -93,6 +94,7 @@ class MyEditor extends React.Component {
       collabModalOpen: false,
       newCollaborators: [],
       online: [],
+      userColor: 'black',
       newCollaborator: '',
       styleMap: {
         'BOLD': {
@@ -145,15 +147,22 @@ class MyEditor extends React.Component {
       console.log("User");
 
     })
-    //listen for userjoined events for this room/documents
-    this.socket.on('userjoined',()=>{
+
+    this.socket.on('userjoined', ()=>{
       console.log('user has joined the room');
 
     })
 
     this.socket.on('onlineUpdated', ({online}) => {
       console.log('onlineUpdated', online);
-      this.setState({online: online});
+      this.setState({online: online}, () => {
+         var userIndex = _.findIndex(this.state.online, function(user) {
+              return user._id === props.store.get('user')._id;
+          })
+          this.setState({userColor: this.state.online[userIndex].color}, () => {
+              console.log(this.state.online, this.state.userColor);
+          })
+      });
     })
 
     this.socket.on('userleft', (data) => {
@@ -300,6 +309,7 @@ class MyEditor extends React.Component {
 
       }
       //apply and remove instead of togle to fix the glitch???
+
       //DETECTING CURSOR VERSUS HIGHLIGHT: if your cursor is only in one spot and not highlighting anything then this is not a highlight
       // if(selection.getStartOffset() === selection.getEndOffset()){
       //   //only emit a cursor event if it took place in the editor (dont emit an event where user has clicked somewhere out of the screen)
@@ -317,9 +327,6 @@ class MyEditor extends React.Component {
         //only emit a cursor event if it took place in the editor (dont emit an event where user has clicked somewhere out of the screen)
             console.log('inside compare selection');
             if(selection._map._root.entries[5][1]){
-                if(window.getSelection().focusNode){
-                    console.log('focus node ', window.getSelection().focusNode.offsetTop);
-                }
                 const windowSelection = window.getSelection();
                 if(windowSelection.rangeCount>0){
                     // console.log('window selection rangecount >0');
@@ -343,7 +350,8 @@ class MyEditor extends React.Component {
             }
       } else {
           console.log('it was a hgihlight');
-          editorState = RichUtils.toggleInlineStyle(editorState, 'RED');
+
+          editorState = RichUtils.toggleInlineStyle(editorState, this.state.userColor);
           this.previousHighlight = editorState.getSelection(); //set previous heighlight  to be newest selection, if theres no new highlight this seems to not even  happen
 
       }
@@ -362,18 +370,13 @@ class MyEditor extends React.Component {
     this.socket.emit('disconnect', {userLeft: this.props.store.get('user')});
     this.socket.disconnect();
 
-
-
-
   }
 
 
 
   componentDidMount(){
-
     fetch(baseURL+'documents/'+this.props.match.params.docId)
     .then((response) => {
-
       return response.json()
     })
     .then((resp) => {
@@ -575,7 +578,7 @@ class MyEditor extends React.Component {
   onAlertOpen() {
     this.setState({alertOpen: !this.state.saved});
   }
-  
+
   onCollabSubmit() {
     console.log("DOCID", this.props.match.params.docId);
     console.log("NEWCOLLAB", this.state.newCollaborators);
@@ -642,117 +645,123 @@ class MyEditor extends React.Component {
       return (
 
         <div >
-          <AppBar
-            title={
-              <TextField id="text-field-controlled" inputStyle={this.state.title === 'Untitled Document' ? {color: 'white', fontStyle: 'italic'}: {color: 'white'}} underlineShow={false} value={this.state.title} onChange={this.onTitleEdit.bind(this)} />}
-              onLeftIconButtonTouchTap={this.state.saved ? this.onAlertOk.bind(this): this.onAlertOpen.bind(this)}
+
+            <AppBar
+                title={
+                    <TextField id="text-field-controlled" inputStyle={this.state.title === 'Untitled Document' ? {color: 'white', fontStyle: 'italic'}: {color: 'white'}} underlineShow={false} value={this.state.title} onChange={this.onTitleEdit.bind(this)} />}
+                onLeftIconButtonTouchTap={this.state.saved ? this.onAlertOk.bind(this): this.onAlertOpen.bind(this)}
             />
             <Dialog
-              title="Add Collaborators by email"
-              modal={true}
-              open={this.state.collabModalOpen}
-              > <div>To add a new collaborator, type in an email and press enter</div>
-              <form className="commentForm" onSubmit={this.onCollabSubmit.bind(this)}>
-                <div>
-                  {this.state.newCollaborators.map((collab) => <p>{collab}</p>)}
-                </div>
-                <input
-                  type="text"
-                  placeholder="collaborator"
-                  value={this.state.newCollaborator}
-                  onKeyDown={(e) => {
-                    if(e.key === 'Enter'){
-                      e.preventDefault()
-                      var updatedCollaborators = this.state.newCollaborators.concat([this.state.newCollaborator]);
-                      this.setState({newCollaborator: '', newCollaborators: updatedCollaborators})
-                    }
-                  }}
-                  onChange={(e) => this.setState({newCollaborator: e.target.value})}
-                />
-                <div style={{ textAlign: 'right', padding: 8, margin: '24px -24px -24px -24px' }}>
-                  {[<FlatButton label="Cancel" primary={true} onClick={() => this.onCollabClose()}/>,
-                  <FlatButton type="submit" label="Submit" primary={true}/>,
-                ]}
-              </div>
-            </form>
-          </Dialog>
-          <Dialog
-            title="Changes not saved!"
-            actions={actions}
-            modal={true}
-            open={this.state.alertOpen}
+                title="Add Collaborators by email"
+                modal={true}
+                open={this.state.collabModalOpen}
+            > <div>To add a new collaborator, type in an email and press enter</div>
+                <form className="commentForm" onSubmit={this.onCollabSubmit.bind(this)}>
+                    <div>
+                        {this.state.newCollaborators.map((collab) => <p>{collab}</p>)}
+                    </div>
+                    <input
+                        type="text"
+                        placeholder="collaborator"
+                        value={this.state.newCollaborator}
+                        onKeyDown={(e) => {
+                            if(e.key === 'Enter'){
+                                e.preventDefault()
+                                var updatedCollaborators = this.state.newCollaborators.concat([this.state.newCollaborator]);
+                                this.setState({newCollaborator: '', newCollaborators: updatedCollaborators})
+                            }
+                        }}
+                        onChange={(e) => this.setState({newCollaborator: e.target.value})}
+                    />
+                    <div style={{ textAlign: 'right', padding: 8, margin: '24px -24px -24px -24px' }}>
+                        {[<FlatButton label="Cancel" primary={true} onClick={() => this.onCollabClose()}/>,
+                            <FlatButton type="submit" label="Submit" primary={true}/>,
+                        ]}
+                    </div>
+                </form>
+            </Dialog>
+            <Dialog
+                title="Changes not saved!"
+                actions={actions}
+                modal={true}
+                open={this.state.alertOpen}
             >You have unsaved changes! Click save to prevent your changes from being lost!</Dialog>
 
             {/* <div>{'user is '+this.props.store.get('user').name}</div> */}
             <div className="docContainer">
-              {/*  <div className='documentControls'>
-              <div style={{display:'flex', flexDirection: 'row'}} > */}
-              <Toolbar>
-                <ToolbarGroup firstChild={true}>
-                  <span style={{display: 'flex', alignSelf: 'center', flexDirection:'row'}}>Shared with:</span>
+                {/*  <div className='documentControls'>
+                <div style={{display:'flex', flexDirection: 'row'}} > */}
+                <Toolbar>
+                    <ToolbarGroup firstChild={true}>
+                        <span style={{display: 'flex', alignSelf: 'center', flexDirection:'row'}}>Shared with:</span>
+                        {/* <List style={{paddingLeft: '15px', paddingRight: '10px'}}>
+                            {this.state.collaborators.map((user, i) => (
+                            <span key={i} className="collaboratorIcon" style={{backgroundColor: randomColor()}}>{'F'}</span>
 
-                  <List style={{paddingLeft: '15px', paddingRight: '10px'}}>
-                    {this.state.online.map((user, i) => {
-                      var color = colors[i];
-                      return(
-                        <span onMouseOver={() => {
-                          alert(user.name);
-                        }}
-                        key={i}
-                        className="collaboratorIcon"
-                        style={{backgroundColor: color}}>
-                          {user.name[0]}
-                        </span>
-                      )
+                            ))}
+
+                        </List> */}
+                        <List style={{paddingLeft: '15px', paddingRight: '10px'}}>
+                            {this.state.online.map((user, i) => {
+
+                                return(
+                                    <span onMouseOver={() => {
+                                        alert(user.name);
+                                    }}
+                                        key={i}
+                                        className="collaboratorIcon"
+                                        style={{backgroundColor: user.color}}>
+                                        {user.name[0]}
+                                    </span>
+                                )
 
 
-                    })}
+                            })}
 
-                  </List>
-                </ToolbarGroup>
-                {/* </div>
-                  <div className="rightSideControls"> */}
-                  <ToolbarGroup lastChild={true}>
-                    <RaisedButton
-                      label={"add collaborators"}
-                      style={{margin: 5}}
-                      primary={true}
-                      onTouchTap={this.onCollabOpen.bind(this)}/>
-                      <RaisedButton
-                        label={this.state.saved ? "Saved" : "Save"}
-                        style={{margin: 5}}
-                        primary={true}
-                        disabled={this.state.saved}
-                        onTouchTap={this.onSave.bind(this)}/>
+                        </List>
+                    </ToolbarGroup>
+                    {/* </div>
+                    <div className="rightSideControls"> */}
+                    <ToolbarGroup lastChild={true}>
                         <RaisedButton
-                          label={this.state.autosave ? "Disable Autosave" : "Enable Autosave"}
-                          style={{marginLeft: 5}}
-                          primary={true}
-                          onTouchTap={this.autoSave.bind(this)}/>
-                        </ToolbarGroup>
-                      </Toolbar>
+                            label={"add collaborators"}
+                            style={{margin: 5}}
+                            primary={true}
+                            onTouchTap={this.onCollabOpen.bind(this)}/>
+                        <RaisedButton
+                            label={this.state.saved ? "Saved" : "Save"}
+                            style={{margin: 5}}
+                            primary={true}
+                            disabled={this.state.saved}
+                            onTouchTap={this.onSave.bind(this)}/>
+                        <RaisedButton
+                            label={this.state.autosave ? "Disable Autosave" : "Enable Autosave"}
+                            style={{marginLeft: 5}}
+                            primary={true}
+                            onTouchTap={this.autoSave.bind(this)}/>
+                    </ToolbarGroup>
+                </Toolbar>
 
-
-                      <div className="btn-toolbar editorToolbar">
-                        <div className="btn-group" style={{display:"inline-block"}}>
-                          <FontStyles
+                <div className="btn-toolbar editorToolbar">
+                    <div className="btn-group" style={{display:"inline-block"}}>
+                        <FontStyles
                             editorState={this.state.editorState}
                             onToggle={this._toggleInlineStyle.bind(this)}
                             onFontSizeIncreaseClick={() => this.onFontSizeIncreaseClick()}
                             onFontSizeDecreaseClick={() => this.onFontSizeDecreaseClick()}
                             onFontColorClick={(fontColor) => this.onFontColorClick(fontColor)}
-                          />
-                        </div>
-                        <div className="btn-group">
-                          <BlockStyles
+                        />
+                    </div>
+                    <div className="btn-group">
+                        <BlockStyles
                             editorState={this.state.editorState}
                             onToggle={this._toggleBlockType.bind(this)}
 
-                          />
-                        </div>
-                      </div>
-                      <div className="editor">
-                        {this.state.top ? (<div style={{position: 'absolute', backgroundColor: 'red', width: '2px', height: this.state.height, top: this.state.top, left: this.state.left}}></div>) : undefined}
+                        />
+                    </div>
+                </div>
+                <div className="editor">
+                    {this.state.top ? (<div style={{position: 'absolute', backgroundColor: this.state.userColor, width: '2px', height: this.state.height, top: this.state.top, left: this.state.left}}></div>) : undefined}
                         <Editor
                           customStyleMap={this.state.styleMap}
                           editorState={this.state.editorState}

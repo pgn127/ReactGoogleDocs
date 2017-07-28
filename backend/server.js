@@ -17,6 +17,7 @@ const io = require('socket.io')(server);
 const _ = require('underscore');
 //can add event handlers to this
 var online = [];
+var colors = ['red', 'orange', 'yellow', 'green', 'blue', 'violet']
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -113,7 +114,8 @@ io.on('connection', (socket) => {
       socket.documentRoom = doc; //create a new key on the socket object with information you want to be accessible in all the handlers
 
       online.push(user);
-      online = _.uniq(online, '_id'); 
+      online[online.length - 1].color = colors[online.length - 1];
+      online = _.uniq(online, '_id');
 
       io.to(doc).emit('onlineUpdated', {online});
       //broadcast a userjoined event to everyone but sender that is in the room named doc
