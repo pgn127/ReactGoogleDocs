@@ -28,7 +28,7 @@ import _ from 'underscore';
 
 import io from 'socket.io-client'
 
-// const baseURL = 'http://be747dfd.ngrok.io'
+// const baseURL = 'http://localhost:3000'
 const baseURL = 'https://reactgoogledocs.herokuapp.com'
 
 const styleMap = {
@@ -162,8 +162,7 @@ class MyEditor extends React.Component {
     }
     this.focus = () => this.refs.editor.focus();
     this.previousHighlight = null; //means you dont have a selection/highlight but can still ahv ea cursor
-    // this.socket = io.connect('http://localhost:3000');
-    this.socket = io.connect('https://reactgoogledocs.herokuapp.com');
+    this.socket = io.connect(baseURL);
 
     //listen for a response from server to confirm your entry to this room
     this.socket.on('welcome', ({doc}) => {
@@ -270,7 +269,7 @@ this.setState({editorState: editorState, saved: false})
           //accept selection changes the editorstate to have the previous highlight selection- turn off where the old highlight was,
           editorState = EditorState.acceptSelection(editorState, this.previousHighlight)
           //switch to old editorstate
-          editorState = RichUtils.toggleInlineStyle(editorState, 'RED'); //TODO : turn off style on the old selection since we had turned this on previously
+          editorState = RichUtils.toggleInlineStyle(editorState, this.state.userColor); //TODO : turn off style on the old selection since we had turned this on previously
 
       editorState = EditorState.acceptSelection(editorState, selection)
       //switch back to new selection by applying 'selection' (that we previously saved before overwirting ) to the editorState
@@ -308,14 +307,10 @@ this.setState({editorState: editorState, saved: false})
         }
       }
     } else {
-      console.log('it was a hgihlight');
       editorState = RichUtils.toggleInlineStyle(editorState, this.state.userColor);
       this.previousHighlight = editorState.getSelection(); //set previous heighlight  to be newest selection, if theres no new highlight this seems to not even  happen
 
     }
-
-    // this.setState({editorState: editorState, saved: false})
-    console.log("OnChange");
     // var currentContent = convertToRaw(editorState.getCurrentContent()); //returns content state out of the editor state
     // var newContentHistory = this.state.contentHistory.slice();
     // newContentHistory.push(currentContent);
@@ -337,14 +332,7 @@ this.setState({editorState: editorState, saved: false})
 
 
   }
-  componentDidMount(){
-    // this.setState({userColor: })
-    // var userIndex = _.findIndex(this.state.online, function(user) {
-    //      return user._id === this.props.store.get('user')._id;
-    //  })
-    //  var userColor = colors[userIndex];
-
-    //  this.setState({userColor: userColor})
+  componentWillMount(){
 
     fetch(baseURL+'/documents/'+this.props.match.params.docId)
     .then((response) => {
@@ -357,16 +345,15 @@ this.setState({editorState: editorState, saved: false})
       if(resp.document.content === ""){
         console.log('document content was empty ');
         this.setState({saved: false, currentDocument: resp.document, collaborators: resp.document.collaborators, title: resp.document.title});
-        this.setState({contentHistory: []});
+        // this.setState({contentHistory: []});
+
       } else {
         const contentState = convertFromRaw( JSON.parse(resp.document.content) ) ;
         var currentDocument = Object.assign({}, resp.document, {content: contentState})
         this.setState({saved: false, currentDocument: currentDocument, collaborators: currentDocument.collaborators, title: currentDocument.title, editorState: EditorState.createWithContent(contentState) })
         this.setState({contentHistory: currentDocument.contentHistory});
-        // socket.emit('room', currentDocument.title);
-        this.setState({room: currentDocument.title});
-
       }
+
       // console.log('document collaborators ', currentDocument.collaborators);
       // this.setState({currentDocument: resp.document})
     })
@@ -542,6 +529,11 @@ this.setState({editorState: editorState, saved: false})
   onCollabSubmit() {
     console.log("DOCID", this.props.match.params.docId);
     console.log("NEWCOLLAB", this.state.newCollaborators);
+    if(!this.state.newCollaborators || this.state.newCollaborators.length==0) {
+        alert('No emails entered! Be sure to press enter after each email.')
+        this.setState({collabModalOpen: false, newCollaborators: []})
+        return;
+    }
     fetch(baseURL+'/documents/add/collaborator/'+this.props.match.params.docId, {
       method: 'POST',
       credentials: 'include',
@@ -554,21 +546,37 @@ this.setState({editorState: editorState, saved: false})
 
       })
     })
-
     .then((response) => {
       return response.json()
     })
     .then((resp) => {
       //   console.log('respose json is add collabs ', resp);
-      this.setState({
-        collaborators: resp.document.collaborators, collabModalOpen: false
-        // newPassword: resp.document.password
-      })
+      if(resp.success){
+          this.setState({
+              collaborators: resp.document.collaborators, collabModalOpen: false, newCollaborators: []
+              // newPassword: resp.document.password
+          })
+          let alertMessage = '';
+          if(resp.added.length === 0){
+               alertMessage += 'No collaborators added. One or more emails may not be registered.  '
+          } else {
+              alertMessage += `Success! ${resp.added} are now collaborators!   `
+          }
+          if(resp.notAdded.length >0) {
+              alertMessage += `Collaborator(s) with email(s) ${resp.notAdded}already exists. `
+          }
+          console.log(' alerting this alert message', alertMessage);
+          alert(alertMessage);
+      } else {
+          console.log('error in collab submit ', resp.error);
+          throw new Error(resp.error)
+        // throw new Error('hi')
+      }
     })
     .catch((err)=> {
       console.log('error in add collabs', err)
-      this.setState({collabModalOpen: false});
-      alert(`error adding collaborators ${this.state.newCollaborators}`)
+      this.setState({collabModalOpen: false, newCollaborators: []});
+      alert(err)
 
     })
   }
@@ -609,130 +617,130 @@ this.setState({editorState: editorState, saved: false})
 
         <div >
 
-          <AppBar
-            title={
-              <TextField id="text-field-controlled" inputStyle={this.state.title === 'Untitled Document' ? {color: 'white', fontStyle: 'italic'}: {color: 'white'}} underlineShow={false} value={this.state.title} onChange={this.onTitleEdit.bind(this)} />}
-              onLeftIconButtonTouchTap={this.state.saved ? this.onAlertOk.bind(this): this.onAlertOpen.bind(this)}
+            <AppBar
+                title={
+                    <TextField id="text-field-controlled" inputStyle={this.state.title === 'Untitled Document' ? {color: 'white', fontStyle: 'italic'}: {color: 'white'}} underlineShow={false} value={this.state.title} onChange={this.onTitleEdit.bind(this)} />}
+                onLeftIconButtonTouchTap={this.state.saved ? this.onAlertOk.bind(this): this.onAlertOpen.bind(this)}
             />
             <Dialog
-              title="Add Collaborators by email"
-              modal={true}
-              open={this.state.collabModalOpen}
-              > <div>To add a new collaborator, type in an email and press enter</div>
-              <form className="commentForm" onSubmit={this.onCollabSubmit.bind(this)}>
-                <div>
-                  {this.state.newCollaborators.map((collab) => <p>{collab}</p>)}
-                </div>
-                <input
-                  type="text"
-                  placeholder="collaborator"
-                  value={this.state.newCollaborator}
-                  onKeyDown={(e) => {
-                    if(e.key === 'Enter'){
-                      e.preventDefault()
-                      var updatedCollaborators = this.state.newCollaborators.concat([this.state.newCollaborator]);
-                      this.setState({newCollaborator: '', newCollaborators: updatedCollaborators})
-                    }
-                  }}
-                  onChange={(e) => this.setState({newCollaborator: e.target.value})}
-                />
-                <div style={{ textAlign: 'right', padding: 8, margin: '24px -24px -24px -24px' }}>
-                  {[<FlatButton label="Cancel" primary={true} onClick={() => this.onCollabClose()}/>,
-                  <FlatButton type="submit" label="Submit" primary={true}/>,
-                ]}
-              </div>
-            </form>
-          </Dialog>
-          <Dialog
-            title="Changes not saved!"
-            actions={actions}
-            modal={true}
-            open={this.state.alertOpen}
+                title="Add Collaborators by email"
+                modal={true}
+                open={this.state.collabModalOpen}
+            > <div>To add a new collaborator, type in an email and press enter</div>
+                <form className="commentForm" onSubmit={this.onCollabSubmit.bind(this)}>
+                    <div>
+                        {this.state.newCollaborators.map((collab) => <p>{collab}</p>)}
+                    </div>
+                    <input
+                        type="text"
+                        placeholder="collaborator"
+                        value={this.state.newCollaborator}
+                        onKeyDown={(e) => {
+                            if(e.key === 'Enter' && this.state.newCollaborator !== ''){
+                                e.preventDefault()
+                                var updatedCollaborators = this.state.newCollaborators.concat([this.state.newCollaborator]);
+                                this.setState({newCollaborator: '', newCollaborators: updatedCollaborators})
+                            }
+                        }}
+                        onChange={(e) => this.setState({newCollaborator: e.target.value})}
+                    />
+                    <div style={{ textAlign: 'right', padding: 8, margin: '24px -24px -24px -24px' }}>
+                        {[<FlatButton label="Cancel" primary={true} onClick={() => this.onCollabClose()}/>,
+                            <FlatButton type="submit" label="Submit" primary={true}/>,
+                        ]}
+                    </div>
+                </form>
+            </Dialog>
+            <Dialog
+                title="Changes not saved!"
+                actions={actions}
+                modal={true}
+                open={this.state.alertOpen}
             >You have unsaved changes! Click save to prevent your changes from being lost!</Dialog>
 
             {/* <div>{'user is '+this.props.store.get('user').name}</div> */}
             <div className="docContainer">
-              {/*  <div className='documentControls'>
-              <div style={{display:'flex', flexDirection: 'row'}} > */}
-              <Toolbar>
-                <ToolbarGroup firstChild={true}>
-                  <span style={{display: 'flex', alignSelf: 'center', flexDirection:'row'}}>Shared with:</span>
-                  {/* <List style={{paddingLeft: '15px', paddingRight: '10px'}}>
-                  {this.state.collaborators.map((user, i) => (
-                  <span key={i} className="collaboratorIcon" style={{backgroundColor: randomColor()}}>{'F'}</span>
-                ))}
-              </List> */}
-              <List style={{paddingLeft: '15px', paddingRight: '10px'}}>
-                {this.state.online.map((user, i) => {
+                {/*  <div className='documentControls'>
+                <div style={{display:'flex', flexDirection: 'row'}} > */}
+                <Toolbar>
+                    <ToolbarGroup firstChild={true}>
+                        <span style={{display: 'flex', alignSelf: 'center', flexDirection:'row'}}>Shared with:</span>
+                        {/* <List style={{paddingLeft: '15px', paddingRight: '10px'}}>
+                            {this.state.collaborators.map((user, i) => (
+                            <span key={i} className="collaboratorIcon" style={{backgroundColor: randomColor()}}>{'F'}</span>
+                            ))}
+                        </List> */}
+                        <List style={{paddingLeft: '15px', paddingRight: '10px'}}>
+                            {this.state.online.map((user, i) => {
 
-                  return(
-                    <span onMouseOver={() => {
-                      alert(user.name);
-                    }}
-                    key={i}
-                    className="collaboratorIcon"
-                    style={{backgroundColor: user.color}}>
-                    {user.name[0]}
-                  </span>
-                )
+                                return(
+                                    <span onMouseOver={() => {
+                                        alert(user.name);
+                                    }}
+                                        key={i}
+                                        className="collaboratorIcon"
+                                        style={{backgroundColor: user.color}}>
+                                        {user.name[0]}
+                                    </span>
+                                )
 
 
-              })}
+                            })}
 
-            </List>
-          </ToolbarGroup>
-          {/* </div>
-            <div className="rightSideControls"> */}
-            <ToolbarGroup lastChild={true}>
-              <RaisedButton
-                label={"add collaborators"}
-                style={{margin: 5}}
-                primary={true}
-                onTouchTap={this.onCollabOpen.bind(this)}/>
-                <RaisedButton
-                  label={this.state.saved ? "Saved" : "Save"}
-                  style={{margin: 5}}
-                  primary={true}
-                  disabled={this.state.saved}
-                  onTouchTap={this.onSave.bind(this)}/>
-                  <RaisedButton
-                    label={this.state.autosave ? "Disable Autosave" : "Enable Autosave"}
-                    style={{marginLeft: 5}}
-                    primary={true}
-                    onTouchTap={this.autoSave.bind(this)}/>
-                  </ToolbarGroup>
+                        </List>
+                    </ToolbarGroup>
+                    {/* </div>
+                    <div className="rightSideControls"> */}
+                    <ToolbarGroup lastChild={true}>
+                        <RaisedButton
+                            label={"add collaborators"}
+                            style={{margin: 5}}
+                            primary={true}
+                            onTouchTap={this.onCollabOpen.bind(this)}/>
+                        <RaisedButton
+                            label={this.state.saved ? "Saved" : "Save"}
+                            style={{margin: 5}}
+                            primary={true}
+                            disabled={this.state.saved}
+                            onTouchTap={this.onSave.bind(this)}/>
+                        <RaisedButton
+                            label={this.state.autosave ? "Disable Autosave" : "Enable Autosave"}
+                            style={{marginLeft: 5}}
+                            primary={true}
+                            onTouchTap={this.autoSave.bind(this)}/>
+                    </ToolbarGroup>
                 </Toolbar>
 
                 <div className="btn-toolbar editorToolbar">
-                  <div className="btn-group" style={{display:"inline-block"}}>
-                    <FontStyles
-                      editorState={this.state.editorState}
-                      onToggle={this._toggleInlineStyle.bind(this)}
-                      onFontSizeIncreaseClick={() => this.onFontSizeIncreaseClick()}
-                      onFontSizeDecreaseClick={() => this.onFontSizeDecreaseClick()}
-                      onFontColorClick={(fontColor) => this.onFontColorClick(fontColor)}
-                    />
-                  </div>
-                  <div className="btn-group">
-                    <BlockStyles
-                      editorState={this.state.editorState}
-                      onToggle={this._toggleBlockType.bind(this)}
-                    />
-                  </div>
-                  <div className="btn-group">
-                    <RaisedButton
-                      label="Revision History"
-                      onClick={this.handleToggle.bind(this)}
-                    />
-                    <Drawer width={200} openSecondary={true} open={this.state.drawerOpen} >
-                      <AppBar title="Revisions" />
-                      <div style={{textAlign: 'center'}} width={200}>
-                        <List style={{paddingLeft: '15px', paddingRight: '10px'}}>
-                          {this.state.contentHistory.map((content, i) => {
-                            var contentObject = JSON.parse(content);
-                            var date = new Date(contentObject.date);
-                            var d = date.toISOString().substring(0, 10);
-                            var t = date.toISOString().substring(11, 16);
+                    <div className="btn-group" style={{display:"inline-block"}}>
+                        <FontStyles
+                            editorState={this.state.editorState}
+                            onToggle={this._toggleInlineStyle.bind(this)}
+                            onFontSizeIncreaseClick={() => this.onFontSizeIncreaseClick()}
+                            onFontSizeDecreaseClick={() => this.onFontSizeDecreaseClick()}
+                            onFontColorClick={(fontColor) => this.onFontColorClick(fontColor)}
+                        />
+                    </div>
+                    <div className="btn-group">
+                        <BlockStyles
+                            editorState={this.state.editorState}
+                            onToggle={this._toggleBlockType.bind(this)}
+                        />
+                    </div>
+                    <div className="btn-group">
+                        <RaisedButton
+                            label="Revision History"
+                            onClick={this.handleToggle.bind(this)}
+                        />
+                        <Drawer width={300} openSecondary={true} open={this.state.drawerOpen} >
+                            <AppBar title="Revisions" />
+                            <div style={{textAlign: 'center'}} width={200}>
+                                <List style={{paddingLeft: '15px', paddingRight: '10px'}}>
+                                    {this.state.contentHistory && this.state.contentHistory.map((content, i) => {
+                                        var contentObject = JSON.parse(content);
+                                        var date = new Date(contentObject.date);
+                                        var d = date.toISOString().substring(0, 10);
+                                        var t = date.toISOString().substring(11, 16);
                             var creator = contentObject.creator;
                             return(
                               <div>
