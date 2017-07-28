@@ -167,7 +167,7 @@ router.post('/documents/add/collaborator/:documentId', function(req, res){
     var collaboratorEmails = []
     // collaboratorEmails.push(req.body.collaboratorEmails)
     var collaboratorEmails = req.body.collaboratorEmails;
-
+    var duplicateEmails =[];
     Document.findById(docId)
     // .populate('collaborators')
     .populate('author')
@@ -178,7 +178,9 @@ router.post('/documents/add/collaborator/:documentId', function(req, res){
     })
     .then((doc) => {
         if(doc) {
-            return User.find({email: { $in: collaboratorEmails}}).exec()
+            let currentCollaborators = doc.collaborators;
+            let newCollaboratorEmails = [];
+            User.find({email: { $in: collaboratorEmails}}).exec()
             .then(users => {
                 if(users && users.length>0){
                     users.forEach((user) => {
@@ -187,7 +189,10 @@ router.post('/documents/add/collaborator/:documentId', function(req, res){
                             return JSON.stringify(collaborator) === JSON.stringify(userRef)
                         })
                         if(!alreadyExists) {
+                            newCollaboratorEmails.push(user.email);
                             currentCollaborators.push(userRef)
+                        } else {
+                            duplicateEmails.push(user.email);
                         }
                         doc.title = doc.title;
                         doc.content = doc.content;
@@ -196,7 +201,7 @@ router.post('/documents/add/collaborator/:documentId', function(req, res){
                         doc.save()
                         .then(doc => {
                             console.log('successful save doc');
-                            res.status(200).json({success: true, document: updatedDoc})
+                            res.status(200).json({success: true, document: updatedDoc, added: newCollaboratorEmails, notAdded: duplicateEmails})
                         })
                         .catch(err => {
                             console.log('error saving doc after added collabs', err);
