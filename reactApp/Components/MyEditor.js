@@ -124,7 +124,15 @@ class MyEditor extends React.Component {
         'RED': {
           backgroundColor:
           'red'
-        }
+        },
+        'orange': {
+          backgroundColor:
+          'orange'
+        },
+        'yellow': {
+          backgroundColor:
+          'yellow'
+        },
       },
       room: ""
     };
@@ -176,7 +184,7 @@ class MyEditor extends React.Component {
 
     //listen for new content and update content state
     this.socket.on('receivedNewContent', stringifiedContent => {
-      // console.log('received new content going to update state');
+      console.log('received new content going to update state');
       const contentState = convertFromRaw(JSON.parse(stringifiedContent))
       const newEditorState = EditorState.createWithContent(contentState)
       this.setState({editorState: newEditorState})
@@ -191,7 +199,17 @@ class MyEditor extends React.Component {
         const originalEditorState = editorState;
         const originalSelection = editorState.getSelection();
         //move my cursor to be incoming selection ObjectId
+        if(this.previousHighlight){ //if i have an old selection, then  change editorstate to be the result of
+            //accept selection changes the editorstate to have the previous highlight selection- turn off where the old highlight was,
+            // editorState = EditorState.acceptSelection(editorState, this.previousHighlight)
+            // //switch to old editorstate
+            // editorState = RichUtils.toggleInlineStyle(editorState, this.state.userColor); //turn off style on the old selection since we had turned this on previously
+            //
+            // editorState = EditorState.acceptSelection(editorState, originalSelection)
+            //switch back to new selection by applying 'selection' (that we previously saved before overwirting ) to the editorState
+            this.previousHighlight = null;
 
+        }
         //take the original selection stateand change all its values to be the selectionstateobj  that we just received
         const incomingSelectionState = originalSelection.merge(incomingSelectionObj)
         // console.log('incomign selection state is ', incomingSelectionObj, incomingSelectionState.getStartOffset(), incomingSelectionState.getEndOffset());
@@ -210,37 +228,6 @@ class MyEditor extends React.Component {
             console.log('temportaray state undefined wtf');
         }
 
-    })
-    this.socket.on('testrecieve', (data) => {
-        console.log('in testreceive new cursor');
-        const incomingSelectionObj = data.incomingSelectionObj
-        const loc = data.loc
-        let editorState = this.state.editorState;
-        const originalEditorState = editorState;
-        const originalSelection = this.state.editorState.getSelection();
-        //move my cursor to be incoming selection ObjectId
-
-        //take the original selection stateand change all its values to be the selectionstateobj  that we just received
-        const incomingSelectionState = originalSelection.merge(incomingSelectionObj)
-        // console.log('incomign selection state is ', incomingSelectionObj, incomingSelectionState.getStartOffset(), incomingSelectionState.getEndOffset());
-        const temporaryEditorState = EditorState.forceSelection(originalEditorState, incomingSelectionState)
-
-        if(temporaryEditorState) {
-            // console.log('received cursor move');
-            // console.log('temporaryEditorState nto undefined ', temporaryEditorState);
-            console.log('inside testrecieve tempstate');
-            this.setState({editorState: temporaryEditorState}, function() {
-                //were now referring to browser selectionstateobjc
-                console.log('inside testrecieve set state');
-                if(loc && loc.top && loc.bottom && loc.left) {
-                    console.log('inside testrecieve loc');
-                    this.setState({editorState: originalEditorState, top: loc.top, left: loc.left, height: loc.bottom - loc.top})
-                }
-
-            })
-        } else {
-            console.log('temportaray state undefined wtf');
-        }
     })
 
 
@@ -301,7 +288,7 @@ class MyEditor extends React.Component {
           //accept selection changes the editorstate to have the previous highlight selection- turn off where the old highlight was,
           editorState = EditorState.acceptSelection(editorState, this.previousHighlight)
           //switch to old editorstate
-          editorState = RichUtils.toggleInlineStyle(editorState, 'RED'); //turn off style on the old selection since we had turned this on previously
+          editorState = RichUtils.toggleInlineStyle(editorState, this.state.userColor); //turn off style on the old selection since we had turned this on previously
 
           editorState = EditorState.acceptSelection(editorState, selection)
           //switch back to new selection by applying 'selection' (that we previously saved before overwirting ) to the editorState
@@ -349,19 +336,18 @@ class MyEditor extends React.Component {
 
             }
       } else {
-          console.log('it was a hgihlight');
 
           editorState = RichUtils.toggleInlineStyle(editorState, this.state.userColor);
-          this.previousHighlight = editorState.getSelection(); //set previous heighlight  to be newest selection, if theres no new highlight this seems to not even  happen
+          this.previousHighlight = editorState.getSelection(); //set previous heighlight to be newest selection, if theres no new highlight this seems to not even  happen
 
       }
 
       // this.setState({editorState: editorState, saved: false})
 
-      var currentContent = convertToRaw(editorState.getCurrentContent()); //returns content state out of the editor state
-      this.socket.emit('newContent', JSON.stringify(currentContent)); //emit a newcontent event
+      const currentContent = editorState.getCurrentContent(); //returns content state out of the editor state
+      const stringifiedContent = JSON.stringify(convertToRaw(currentContent));
+      this.socket.emit('newContent', stringifiedContent);
       this.setState({editorState: editorState, saved: false})
-
   }
 
   //to ensure something happens righ when component is about to get killed
