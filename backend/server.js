@@ -91,7 +91,7 @@ mongoose.connect(process.env.MONGODB_URI);
 //   console.log('Backend server for Electron App running on port 3000!')
 // })
 // const io = require('socket.io')(server);
-server.listen(3000, function () {
+server.listen(process.env.PORT || 3000, function () {
   console.log('Backend server for Electron App running on port 3000!')
 })
 
@@ -142,13 +142,7 @@ socket.on('cursorMove', selection => {
     socket.broadcast.to(socket.documentRoom).emit('receiveNewCursor', selection)
 })
 
-// socket.on('testsend', (data) => {
-//     // console.log('selection',selection);
-//     // console.log('received cursormove');
-//     socket.broadcast.to(socket.documentRoom).emit('testrecieve', data)
-// })
 
-//CODEALONG
 //this will get called when disconnect is dispatched, do cleanup here
 //when people leave the pagethis is where you are notified
   socket.on('disconnect', ({userleft}) => {
@@ -173,22 +167,6 @@ socket.on('cursorMove', selection => {
 
 //-------------
 
-
-//someone joined the room
-  socket.on('room', (data) => {
-    console.log('joined room on room socket listener');
-    // socket.join(data);
-    // console.log(io.nsps['/'].adapter.rooms[data].length);
-    // if(io.nsps['/'].adapter.rooms[data].length >= 6){
-    //   socket.emit('redirect');
-    // }
-  });
-
-  socket.on('cursor', (data) => {
-    // console.log(data);
-    console.log('about to broadcast update event');
-    // socket.broadcast.to(data.room).emit('update', data);
-  });
 
   socket.on('limit', () => {
     window.location.href = '/';
