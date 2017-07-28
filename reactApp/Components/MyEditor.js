@@ -34,9 +34,11 @@ import RemoveRedEye from 'material-ui/svg-icons/image/remove-red-eye';
 import io from 'socket.io-client'
 
 
+
 //const baseURL = 'http://localhost:3000'
 //const baseURL = 'http://b9a62ead.ngrok.io'
 const baseURL = 'https://reactgoogledocs.herokuapp.com'
+
 
 
 const styleMap = {
@@ -174,10 +176,7 @@ class MyEditor extends React.Component {
     this.focus = () => this.refs.editor.focus();
     this.previousHighlight = null; //means you dont have a selection/highlight but can still ahv ea cursor
 
-
-    this.socket = io.connect("https://reactgoogledocs.herokuapp.com/")
-    //this.socket = io.connect("http://localhost:3000")
-    // this.socket = io.connect('http://b9a62ead.ngrok.io')
+    this.socket = io.connect(baseURL);
 
 
     //listen for a response from server to confirm your entry to this room
@@ -287,12 +286,13 @@ class MyEditor extends React.Component {
     //save current selection
     const selection = editorState.getSelection() //refers to most up to date selection and save it
 
-    //if i have a previous highlight,
-    if(this.previousHighlight){ //if i have an old selection, then  change editorstate to be the result of
-      //accept selection changes the editorstate to have the previous highlight selection- turn off where the old highlight was,
-      editorState = EditorState.acceptSelection(editorState, this.previousHighlight)
-      //switch to old editorstate
-      editorState = RichUtils.toggleInlineStyle(editorState, 'RED'); //TODO : turn off style on the old selection since we had turned this on previously
+      //if i have a previous highlight,
+      if(this.previousHighlight){ //if i have an old selection, then  change editorstate to be the result of
+          //accept selection changes the editorstate to have the previous highlight selection- turn off where the old highlight was,
+          editorState = EditorState.acceptSelection(editorState, this.previousHighlight)
+          //switch to old editorstate
+          editorState = RichUtils.toggleInlineStyle(editorState, this.state.userColor); //TODO : turn off style on the old selection since we had turned this on previously
+
 
       editorState = EditorState.acceptSelection(editorState, selection)
       //switch back to new selection by applying 'selection' (that we previously saved before overwirting ) to the editorState
@@ -330,14 +330,11 @@ class MyEditor extends React.Component {
         }
       }
     } else {
-      console.log('it was a hgihlight');
       editorState = RichUtils.toggleInlineStyle(editorState, this.state.userColor);
       this.previousHighlight = editorState.getSelection(); //set previous heighlight  to be newest selection, if theres no new highlight this seems to not even  happen
 
     }
 
-    // this.setState({editorState: editorState, saved: false})
-    console.log("OnChange");
     var currentContent = convertToRaw(editorState.getCurrentContent());
     this.socket.emit('newContent', JSON.stringify(currentContent));
 
@@ -351,7 +348,7 @@ class MyEditor extends React.Component {
 
   }
 
-  componentDidMount(){
+  componentWillMount(){
     fetch(baseURL+'/documents/'+this.props.match.params.docId)
     .then((response) => {
       return response.json()
@@ -362,16 +359,19 @@ class MyEditor extends React.Component {
       if(resp.document.content === ""){
         console.log('document content was empty ');
         this.setState({saved: false, currentDocument: resp.document, collaborators: resp.document.collaborators, title: resp.document.title});
+        // this.setState({contentHistory: []});
 
       } else {
         const contentState = convertFromRaw( JSON.parse(resp.document.content) ) ;
         var currentDocument = Object.assign({}, resp.document, {content: contentState})
         this.setState({saved: false, currentDocument: currentDocument, collaborators: currentDocument.collaborators, title: currentDocument.title, editorState: EditorState.createWithContent(contentState) })
+
         this.setState({contentHistory: currentDocument.contentHistory || []});
         // socket.emit('room', currentDocument.title);
-        this.setState({room: currentDocument.title});
+
 
       }
+
       // console.log('document collaborators ', currentDocument.collaborators);
       // this.setState({currentDocument: resp.document})
     })
@@ -529,6 +529,11 @@ class MyEditor extends React.Component {
   onCollabSubmit() {
     console.log("DOCID", this.props.match.params.docId);
     console.log("NEWCOLLAB", this.state.newCollaborators);
+
+    if(this.state.newCollaborators.length ==0) {
+        alert('No emails entered! Be sure to press enter after each email.')
+        return;
+    }
     fetch(baseURL+'documents/add/collaborator/'+this.props.match.params.docId, {
       method: 'POST',
       credentials: 'include',
@@ -545,15 +550,34 @@ class MyEditor extends React.Component {
       return response.json()
     })
     .then((resp) => {
-      this.setState({
-        collaborators: resp.document.collaborators, collabModalOpen: false
-        // newPassword: resp.document.password
-      })
+
+      //   console.log('respose json is add collabs ', resp);
+      if(resp.success){
+          this.setState({
+              collaborators: resp.document.collaborators, collabModalOpen: false, newCollaborators: []
+              // newPassword: resp.document.password
+          })
+          let alertMessage = '';
+          if(resp.added.length === 0){
+               alertMessage += 'No collaborators added. '
+          } else {
+              alertMessage += `Success! ${resp.added} are now collaborators!`
+          }
+          if(resp.notAdded.length >0) {
+              alertMessage += `Collaborator(s) with email(s) ${resp.notAdded}already exists`
+          }
+          alert(alertMessage);
+      } else {
+          console.log('error in collab submit ', resp.error);
+          throw new Error(resp.error)
+      }
     })
     .catch((err)=> {
       console.log('error in add collabs', err)
       this.setState({collabModalOpen: false});
-      alert(`error adding collaborators ${this.state.newCollaborators}`)
+
+      alert(`error adding collaborators ${this.state.newCollaborators} ${err}`)
+
     })
   }
 
@@ -595,8 +619,15 @@ class MyEditor extends React.Component {
 
           <AppBar
             title={
-              <TextField id="text-field-controlled" inputStyle={this.state.title === 'Untitled Document' ? {color: 'white', fontStyle: 'italic'}: {color: 'white'}} underlineShow={false} value={this.state.title} onChange={this.onTitleEdit.bind(this)} />}
+              <TextField id="text-field-controlled"
+                inputStyle={this.state.title === 'Untitled Document' ? {color: 'white', fontStyle: 'italic'}: {color: 'white'}}
+                underlineShow={false}
+                inputStyle={{boxShadow: 'unset', color: 'white', fontSize: '20px'}}
+                value={this.state.title}
+                onChange={this.onTitleEdit.bind(this)} />}
+
               onLeftIconButtonTouchTap={()=>this.setState({leftMenu: !this.state.leftMenu})}
+
             />
             <Drawer
               docked={false}
@@ -606,6 +637,8 @@ class MyEditor extends React.Component {
               open={this.state.leftMenu}
               onRequestChange={(open) => this.setState({leftMenu:open})}
             >
+              <h1 style={{textAlign:'center', fontWeight: 'bold', fontSize: '25px'}}>{this.state.title}</h1>
+              <h4 style={{textAlign:'center', paddingBottom:'20px', fontStyle:'italic', fontSize: '15px'}}>Document Options</h4>
               <MenuItem leftIcon={<PersonAdd />} onTouchTap={this.onCollabOpen.bind(this)}>Add a Collaborator</MenuItem>
               <MenuItem leftIcon={<RemoveRedEye />} onTouchTap={this.autoSave.bind(this)}>View Collaborators</MenuItem>
               <Divider />
@@ -617,39 +650,39 @@ class MyEditor extends React.Component {
               <MenuItem onTouchTap={this.autoSave.bind(this)}>Logout</MenuItem>
         </Drawer>
             <Dialog
-              title="Add Collaborators by email"
-              modal={true}
-              open={this.state.collabModalOpen}
-              > <div>To add a new collaborator, type in an email and press enter</div>
-              <form className="commentForm" onSubmit={this.onCollabSubmit.bind(this)}>
-                <div>
-                  {this.state.newCollaborators.map((collab) => <p>{collab}</p>)}
-                </div>
-                <input
-                  type="text"
-                  placeholder="collaborator"
-                  value={this.state.newCollaborator}
-                  onKeyDown={(e) => {
-                    if(e.key === 'Enter'){
-                      e.preventDefault()
-                      var updatedCollaborators = this.state.newCollaborators.concat([this.state.newCollaborator]);
-                      this.setState({newCollaborator: '', newCollaborators: updatedCollaborators})
-                    }
-                  }}
-                  onChange={(e) => this.setState({newCollaborator: e.target.value})}
-                />
-                <div style={{ textAlign: 'right', padding: 8, margin: '24px -24px -24px -24px' }}>
-                  {[<FlatButton label="Cancel" primary={true} onClick={() => this.onCollabClose()}/>,
-                  <FlatButton type="submit" label="Submit" primary={true}/>,
-                ]}
-              </div>
-            </form>
-          </Dialog>
-          <Dialog
-            title="Changes not saved!"
-            actions={actions}
-            modal={true}
-            open={this.state.alertOpen}
+                title="Add Collaborators by email"
+                modal={true}
+                open={this.state.collabModalOpen}
+            > <div>To add a new collaborator, type in an email and press enter</div>
+                <form className="commentForm" onSubmit={this.onCollabSubmit.bind(this)}>
+                    <div>
+                        {this.state.newCollaborators.map((collab) => <p>{collab}</p>)}
+                    </div>
+                    <input
+                        type="text"
+                        placeholder="collaborator"
+                        value={this.state.newCollaborator}
+                        onKeyDown={(e) => {
+                            if(e.key === 'Enter'){
+                                e.preventDefault()
+                                var updatedCollaborators = this.state.newCollaborators.concat([this.state.newCollaborator]);
+                                this.setState({newCollaborator: '', newCollaborators: updatedCollaborators})
+                            }
+                        }}
+                        onChange={(e) => this.setState({newCollaborator: e.target.value})}
+                    />
+                    <div style={{ textAlign: 'right', padding: 8, margin: '24px -24px -24px -24px' }}>
+                        {[<FlatButton label="Cancel" primary={true} onClick={() => this.onCollabClose()}/>,
+                            <FlatButton type="submit" label="Submit" primary={true}/>,
+                        ]}
+                    </div>
+                </form>
+            </Dialog>
+            <Dialog
+                title="Changes not saved!"
+                actions={actions}
+                modal={true}
+                open={this.state.alertOpen}
             >You have unsaved changes! Click save to prevent your changes from being lost!</Dialog>
 
             {/* <div>{'user is '+this.props.store.get('user').name}</div> */}
@@ -742,6 +775,7 @@ class MyEditor extends React.Component {
                       onRequestChange={(open) => this.setState({drawerOpen:open})}
                        >
                       {/* <AppBar title="Revisions" /> */}
+                      <h1 style={{textAlign:'center', fontStyle: 'italic', fontSize: '25px'}}>Revison History</h1>
                       <div style={{textAlign: 'center'}} width={200}>
                         <List style={{paddingLeft: '15px', paddingRight: '10px'}}>
                           {this.state.contentHistory && this.state.contentHistory.map((content, i) => {
@@ -749,6 +783,7 @@ class MyEditor extends React.Component {
                             var date = new Date(contentObject.date);
                             var d = date.toISOString().substring(0, 10);
                             var t = date.toISOString().substring(11, 16);
+
                             var creator = contentObject.creator;
                             return(
                               <div>

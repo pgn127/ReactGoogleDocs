@@ -12,9 +12,11 @@ const style = {
 };
 
 
+
 //const baseURL = 'http://localhost:3000';
 //const baseURL = 'http://b9a62ead.ngrok.io';
 const baseURL = 'https://reactgoogledocs.herokuapp.com';
+
 
 export default class Register extends React.Component {
   constructor(props) {
