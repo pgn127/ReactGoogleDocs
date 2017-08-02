@@ -34,3 +34,7 @@ ReactGoogleDocs uses React to manage document state enabling users to view colla
 
 
 ![](https://cl.ly/2d211U3z1q2U/Screen%20Recording%202017-08-01%20at%2008.44%20PM.gif)
+
+![](https://cl.ly/252B331P0g2U/Screen%20Recording%202017-08-01%20at%2008.46%20PM.gif)
+
+![](https://cl.ly/3M363x3X450Y/Screen%20Recording%202017-08-01%20at%2009.01%20PM.gif)
