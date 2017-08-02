@@ -24,9 +24,26 @@ import MenuItem from 'material-ui/MenuItem';
 import {Toolbar, ToolbarGroup, ToolbarSeparator, ToolbarTitle} from 'material-ui/Toolbar';
 var Mousetrap = require('mousetrap');
 import _ from 'underscore';
+import IconMenu from 'material-ui/IconMenu';
+import MoreVertIcon from 'material-ui/svg-icons/navigation/more-vert';
 import PersonAdd from 'material-ui/svg-icons/social/person-add';
 import Delete from 'material-ui/svg-icons/action/delete';
+import Loop from 'material-ui/svg-icons/av/loop';
 import RemoveRedEye from 'material-ui/svg-icons/image/remove-red-eye';
+import Save from 'material-ui/svg-icons/content/save';
+import Arrow from 'material-ui/svg-icons/navigation/subdirectory-arrow-left';
+import Power from 'material-ui/svg-icons/action/power-settings-new';
+import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
+import getMuiTheme from 'material-ui/styles/getMuiTheme';
+import Tooltip from 'material-ui/internal/tooltip';
+import ArrowDropRight from 'material-ui/svg-icons/navigation-arrow-drop-right';
+
+// const muiTheme = getMuiTheme({
+//   tooltip: {
+//     color: '#f1f1f1',
+//     rippleBackgroundColor: 'blue'
+//   },
+// });
 
 
 
@@ -127,6 +144,7 @@ class MyEditor extends React.Component {
       userColor: 'black',
       leftMenu: false,
       newCollaborator: '',
+      showToolTip: false,
       styleMap: {
         'BOLD': {
           fontWeight: 'bold'
@@ -192,6 +210,10 @@ class MyEditor extends React.Component {
 
     this.socket.on('onlineUpdated', ({online}) => {
       console.log('onlineUpdated', online);
+      online.forEach((user)=>{
+        user.tooltip = false
+
+      })
       this.setState({online: online}, () => {
         var userIndex = _.findIndex(this.state.online, function(user) {
           return user._id === props.store.get('user')._id;
@@ -236,7 +258,6 @@ class MyEditor extends React.Component {
       const originalEditorState = editorState;
       const originalSelection = this.state.editorState.getSelection();
       //move my cursor to be incoming selection ObjectId
-
       //take the original selection stateand change all its values to be the selectionstateobj  that we just received
       const incomingSelectionState = originalSelection.merge(incomingSelectionObj)
       // console.log('incomign selection state is ', incomingSelectionObj, incomingSelectionState.getStartOffset(), incomingSelectionState.getEndOffset());
@@ -249,23 +270,32 @@ class MyEditor extends React.Component {
             // console.log('location received was not null, about to move other users curosr', loc);
             this.setState({editorState: originalEditorState, top: loc.top, left: loc.left, height: loc.bottom - loc.top})
           }
-
         })
       } else {
         console.log('temportaray state undefined wtf');
       }
     })
-
-
     //emit a joined message to everyone else also in the same document, send the document id of what u are trying to join
     this.socket.emit('joined', {doc: this.props.match.params.docId, user: this.props.store.get('user')});
-
-
   }
-
 
   handleToggle(){
     this.setState({drawerOpen: !this.state.drawerOpen});
+  }
+  logout(){
+    fetch(baseURL+'/logout')
+    .then((response) => {
+      return response.json()
+    })
+    .then((resp) => {
+      if (resp.success){
+        this.props.store.delete('user');
+        this.setState({
+          loggedIn: false,
+        })
+      }
+    })
+    .catch((err)=>console.log(err))
   }
 
   autoSave(){
@@ -299,8 +329,6 @@ class MyEditor extends React.Component {
       this.previousHighlight = null;
 
     }
-    //apply and remove instead of togle to fix the glitch???
-
 
 
     //DETECTING CURSOR VERSUS HIGHLIGHT: if your cursor is only in one spot and not highlighting anything then this is not a highlight
@@ -332,20 +360,15 @@ class MyEditor extends React.Component {
     } else {
       editorState = RichUtils.toggleInlineStyle(editorState, this.state.userColor);
       this.previousHighlight = editorState.getSelection(); //set previous heighlight  to be newest selection, if theres no new highlight this seems to not even  happen
-
     }
 
     var currentContent = convertToRaw(editorState.getCurrentContent());
     this.socket.emit('newContent', JSON.stringify(currentContent));
-
-
   }
 
-  //to ensure something happens righ when component is about to get killed
   componentWillUnmount() {
     this.socket.emit('disconnect', {userLeft: this.props.store.get('user')});
     this.socket.disconnect();
-
   }
 
   componentWillMount(){
@@ -367,13 +390,9 @@ class MyEditor extends React.Component {
         this.setState({saved: false, currentDocument: currentDocument, collaborators: currentDocument.collaborators, title: currentDocument.title, editorState: EditorState.createWithContent(contentState) })
 
         this.setState({contentHistory: currentDocument.contentHistory || []});
-        // socket.emit('room', currentDocument.title);
-
 
       }
 
-      // console.log('document collaborators ', currentDocument.collaborators);
-      // this.setState({currentDocument: resp.document})
     })
     .catch((err)=>console.log('error pulling doc', err));
 
@@ -543,7 +562,6 @@ class MyEditor extends React.Component {
       },
       body: JSON.stringify({
         collaboratorEmails: this.state.newCollaborators
-        //   collaborators: newCollaborators
 
       })
     })
@@ -552,7 +570,6 @@ class MyEditor extends React.Component {
     })
     .then((resp) => {
 
-      //   console.log('respose json is add collabs ', resp);
       if(resp.success){
           this.setState({
               collaborators: resp.document.collaborators, collabModalOpen: false, newCollaborators: []
@@ -615,7 +632,19 @@ class MyEditor extends React.Component {
           <Redirect to='/directory' />
         )
       }
-
+      const Logged = (props) => (
+        <IconMenu
+          {...props}
+          iconButtonElement={
+            <IconButton><MoreVertIcon /></IconButton>
+          }
+          targetOrigin={{horizontal: 'right', vertical: 'top'}}
+          anchorOrigin={{horizontal: 'right', vertical: 'bottom'}}
+          iconStyle={{color:'white'}}
+        >
+          <MenuItem primaryText="View Revision History" onMouseDown={this.handleToggle.bind(this)} />
+        </IconMenu>
+      );
       return (
 
         <div >
@@ -630,6 +659,7 @@ class MyEditor extends React.Component {
                 onChange={this.onTitleEdit.bind(this)} />}
 
               onLeftIconButtonTouchTap={()=>this.setState({leftMenu: !this.state.leftMenu})}
+              iconElementRight={<Logged /> }
 
             />
             <Drawer
@@ -640,17 +670,31 @@ class MyEditor extends React.Component {
               open={this.state.leftMenu}
               onRequestChange={(open) => this.setState({leftMenu:open})}
             >
-              <h1 style={{textAlign:'center', fontWeight: 'bold', fontSize: '25px'}}>{this.state.title}</h1>
-              <h4 style={{textAlign:'center', paddingBottom:'20px', fontStyle:'italic', fontSize: '15px'}}>Document Options</h4>
-              <MenuItem leftIcon={<PersonAdd />} onTouchTap={this.onCollabOpen.bind(this)}>Add a Collaborator</MenuItem>
-              <MenuItem leftIcon={<RemoveRedEye />} onTouchTap={this.autoSave.bind(this)}>View Collaborators</MenuItem>
-              <Divider />
-              <MenuItem onTouchTap={this.autoSave.bind(this)}>Enable Autosave</MenuItem>
-              <Divider />
-              <MenuItem primaryText="Remove" leftIcon={<Delete />} />
-              <MenuItem onTouchTap={this.state.saved ? this.onAlertOk.bind(this): this.onAlertOpen.bind(this)}>Back to Directory</MenuItem>
-              <Divider />
-              <MenuItem onTouchTap={this.autoSave.bind(this)}>Logout</MenuItem>
+              <h1 style={{textAlign:'center', fontWeight: 'bold', fontSize: '25px', paddingTop: '10px', paddingBottom: '5px'}}>{this.state.title}</h1>
+              <h4 style={{textAlign:'center', paddingBottom:'10px', fontStyle:'italic', fontSize: '15px'}}>Document Options</h4>
+              <Divider/>
+                <br/>
+                <List>
+              <ListItem primaryText='Add a Collaborator' leftIcon={<PersonAdd />} onTouchTap={this.onCollabOpen.bind(this)} />
+              <ListItem primaryText='View Collaborators'
+                leftIcon={<RemoveRedEye />}
+                rightIcon={<ArrowDropRight />}
+                primaryTogglesNestedList={true}
+                onTouchTap={this.autoSave.bind(this)}
+                nestedItems={[this.state.collaborators.map((collab)=> <ListItem disabled={true} primaryText={collab.email} insetChildren={true} />,)
+
+
+                ]}/>,
+
+              <br/>
+              <ListItem primaryText='Enable Autosave' leftIcon={<Loop />} onTouchTap={this.autoSave.bind(this)} />
+
+              <br/>
+              <ListItem primaryText="Remove" leftIcon={<Delete />} />
+              <ListItem primaryText="Back to Directory" leftIcon={<Arrow />} onTouchTap={this.state.saved ? this.onAlertOk.bind(this): this.onAlertOpen.bind(this)} />
+              <br/>
+              <ListItem primaryText='Logout' leftIcon={<Power />} onTouchTap={this.logout.bind(this)}/>
+            </List>
         </Drawer>
             <Dialog
                 title="Add Collaborators by email"
@@ -688,7 +732,6 @@ class MyEditor extends React.Component {
                 open={this.state.alertOpen}
             >You have unsaved changes! Click save to prevent your changes from being lost!</Dialog>
 
-            {/* <div>{'user is '+this.props.store.get('user').name}</div> */}
             <div className="docContainer">
               <Snackbar
                 open={this.state.snackBar}
@@ -696,63 +739,49 @@ class MyEditor extends React.Component {
                 autoHideDuration={2000}
                 onRequestClose={this.closeSnackbar.bind(this)}
               />
-              {/*  <div className='documentControls'>
-              <div style={{display:'flex', flexDirection: 'row'}} > */}
+
               <Toolbar>
                 <ToolbarGroup firstChild={true}>
                   <span style={{display: 'flex', alignSelf: 'center', flexDirection:'row'}}>Online Now:</span>
-                  {/* <List style={{paddingLeft: '15px', paddingRight: '10px'}}>
-                  {this.state.collaborators.map((user, i) => (
-                  <span key={i} className="collaboratorIcon" style={{backgroundColor: randomColor()}}>{'F'}</span>
-                ))}
-              </List> */}
+
               <List style={{paddingLeft: '15px', paddingRight: '10px'}}>
+                {/* <MuiThemeProvider muiTheme={muiTheme}> */}
                 {this.state.online.map((user, i) => {
 
                   return(
-                    <span onMouseOver={() => {
-                      alert(user.name);
+
+                    <span onMouseOver={()=>{
+                      const newOnline = [...this.state.online]
+                      newOnline[i].tooltip = true;
+                      this.setState({online: newOnline})
                     }}
                     key={i}
+                    onMouseLeave={()=>{
+                      const newOnline = [...this.state.online]
+                      newOnline[i].tooltip = false;
+                      this.setState({online: newOnline})
+                    }}
                     className="collaboratorIcon"
                     style={{backgroundColor: user.color}}>
                     {user.name[0]}
+                    <Tooltip label={user.name} show={this.state.online[i].tooltip} verticalPosition='bottom'/>
                   </span>
                 )
 
 
               })}
-
+              {/* </MuiThemeProvider> */}
             </List>
           </ToolbarGroup>
-          {/* </div>
-            <div className="rightSideControls"> */}
             <ToolbarGroup lastChild={true}>
-              {/* <RaisedButton
-                label={"add collaborators"}
-                style={{margin: 5}}
-                primary={true}
-                onTouchTap={this.onCollabOpen.bind(this)}/> */}
                 <RaisedButton
                   label={this.state.saved ? "Saved" : "Save"}
                   style={{margin: 5}}
                   primary={true}
                   disabled={this.state.saved}
                   onTouchTap={this.onSave.bind(this)}/>
-                  <RaisedButton
-                    label="View Revision History"
-                    primary={true}
-                    style={{margin: 5}}
-                    onClick={this.handleToggle.bind(this)}
-                  />
-                  {/* <RaisedButton
-                    label={this.state.autosave ? "Disable Autosave" : "Enable Autosave"}
-                    style={{marginLeft: 5}}
-                    primary={true}
-                    onTouchTap={this.autoSave.bind(this)}/> */}
                   </ToolbarGroup>
                 </Toolbar>
-
                 <div className="btn-toolbar editorToolbar">
                   <div className="btn-group" style={{display:"inline-block"}}>
                     <FontStyles
@@ -772,13 +801,13 @@ class MyEditor extends React.Component {
                   <div className="btn-group">
                     <Drawer
                       docked={false}
-                      width={200}
+                      width={300}
                       openSecondary={true}
                       open={this.state.drawerOpen}
                       onRequestChange={(open) => this.setState({drawerOpen:open})}
                        >
-                      {/* <AppBar title="Revisions" /> */}
-                      <h1 style={{textAlign:'center', fontStyle: 'italic', fontSize: '25px'}}>Revison History</h1>
+                      <h1 style={{textAlign:'center', fontStyle: 'italic', fontSize: '25px', paddingTop: '10px', paddingBottom: '10px'}}>Revison History</h1>
+                      <Divider />
                       <div style={{textAlign: 'center'}} width={200}>
                         <List style={{paddingLeft: '15px', paddingRight: '10px'}}>
                           {this.state.contentHistory && this.state.contentHistory.map((content, i) => {
@@ -786,19 +815,16 @@ class MyEditor extends React.Component {
                             var date = new Date(contentObject.date);
                             var d = date.toISOString().substring(0, 10);
                             var t = date.toISOString().substring(11, 16);
-
                             var creator = contentObject.creator;
                             return(
                               <div>
                                 <span onClick={() => {
-                                  console.log(content);
                                   const contentState = convertFromRaw(JSON.parse(content))
                                   const newEditorState = EditorState.createWithContent(contentState)
                                   this.setState({editorState: newEditorState})
                                 }}
                                 key={i}
-                                // className="collaboratorIcon"
-                                // style={{backgroundColor: 'blue'}}
+
                                 >
                                   <MenuItem>
                                     {d + ', ' + t}
