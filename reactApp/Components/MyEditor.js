@@ -645,6 +645,7 @@ class MyEditor extends React.Component {
           <MenuItem primaryText="View Revision History" onMouseDown={this.handleToggle.bind(this)} />
         </IconMenu>
       );
+      console.log(this.state.collaborators);
       return (
 
         <div >
