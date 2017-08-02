@@ -49,7 +49,7 @@ userSchema.methods.getCollaboratedDocuments = function (callback){
   var userid = this._id;
   //find all documents where user is oNLY A COLLABORATOR, NOT OWNER
   //find all documents where authorid!=userid but user present in the collaborators array
-  Document.find({author: {$nin: [userid]}, collaborators: {$all: [userid]}})
+  Document.find({author: {$nin: [userid]}, collaborators: {$all: [userid]}}).populate('author').populate('collaborators')
   .exec(function(err,documents){
       console.log('documents only collaborate are ', documents);
     callback(err,documents);
@@ -59,7 +59,7 @@ userSchema.methods.getCollaboratedDocuments = function (callback){
 userSchema.methods.getOwnedDocuments = function (callback){
   var userid = this._id;
   //find all documents where userid is present inthe array of collaborators
-  Document.find({author: userid})
+  Document.find({author: userid}).populate('author').populate('collaborators')
   .exec(function(err,documents){
       console.log('documents owned by user are are ', documents);
     callback(err,documents);
@@ -69,7 +69,7 @@ userSchema.methods.getOwnedDocuments = function (callback){
 userSchema.methods.getAllDocuments = function (callback){
   var userid = this._id;
   //find all documents where userid is present inthe array of collaborators
-  Document.find({collaborators: {$all: [userid]}})
+  Document.find({collaborators: {$all: [userid]}}).populate('collaborators').populate('author')
   .exec(function(err,documents){
       console.log('documents are ', documents);
     callback(err,documents);

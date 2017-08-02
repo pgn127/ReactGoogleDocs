@@ -11,10 +11,15 @@ import MenuItem from 'material-ui/MenuItem';
 import FloatingActionButton from 'material-ui/FloatingActionButton';
 import ContentAdd from 'material-ui/svg-icons/content/add';
 import RaisedButton from 'material-ui/RaisedButton';
+import FontIcon from 'material-ui/FontIcon';
+import IconButton from 'material-ui/IconButton';
+import AppBar from 'material-ui/AppBar';
 import Popover, {PopoverAnimationVertical} from 'material-ui/Popover';
 import Dialog from 'material-ui/Dialog';
 import FlatButton from 'material-ui/FlatButton';
 import TextField from 'material-ui/TextField';
+import IconMenu from 'material-ui/IconMenu';
+import MoreVertIcon from 'material-ui/svg-icons/navigation/more-vert';
 
 
 //const baseURL = 'http://localhost:3000';
@@ -289,81 +294,97 @@ class Directory extends React.Component {
       )
     }
     return (
-      <div style={{backgroundColor: 'white', }}>
+      <div style={{backgroundColor: 'white'}}>
+          <AppBar
+              title={'Document Directory'}
+              titleStyle={{textAlign: 'center', fontSize: 32}}
+              style={{height: 75}}
+              //   iconClassNameRight="muidocs-icon-navigation-expand-more"
+              //   iconStyleRight={{fill: 'white', color: 'white'}}
+              iconElementRight={<IconMenu
+                  iconButtonElement={<IconButton><MoreVertIcon /></IconButton>}
+                  targetOrigin={{horizontal: 'right', vertical: 'top'}}
+                  anchorOrigin={{horizontal: 'right', vertical: 'bottom'}}>
+                  <MenuItem  primaryText={this.state.user.email} />
+                  <Divider />
+                  <MenuItem  onTouchTap={() => this.logout()} primaryText="Sign out" />
+              </IconMenu>}
+              iconElementLeft={<FloatingActionButton backgroundColor={'white'} mini={true} iconStyle={{fill: '#E91E63'}}  onTouchTap={() => this.onModalOpen('isDocModalOpen')}>
+                  <ContentAdd />
+              </FloatingActionButton>}
+          />
+          <Dialog
+              title="Create a New Document"
+              // actions={actions}
+              modal={false}
+              open={this.state.isDocModalOpen}
+              onRequestClose={() => this.onModalClose('isDocModalOpen')}
+          >{newDocForm}</Dialog>
 
-          <h1 style={{textAlign: 'center', fontSize: '40px', paddingTop: '20px'}} >Document Directory</h1>
-          <h2 style={{textAlign: 'center'}} >Open document to edit or create a new one!</h2>
-          <h3 style={{textAlign: 'center'}}>{this.state.user.email}</h3>
-          <div style={{marginLeft: '5px', marginRight: '5px'}}>
-              <div style={{display: 'flex', justifyContent: 'space-between'}}>
-                  <div>
-                      <FloatingActionButton onTouchTap={() => this.onModalOpen('isDocModalOpen')}>
-                          <ContentAdd />
-                      </FloatingActionButton>
-                      <Dialog
-                          title="Create a New Document"
-                          // actions={actions}
-                          modal={false}
-                          open={this.state.isDocModalOpen}
-                          onRequestClose={() => this.onModalClose('isDocModalOpen')}
-                      >{newDocForm}</Dialog>
-                  </div>
-                  {this.state.documents[0]._id!==0?<div>
-                      <RaisedButton
-                          onTouchTap={this.handleTouchTap.bind(this)}
-                          label="Filter"
-                      />
-                      <Popover
-                          open={this.state.isOpen}
-                          anchorEl={this.state.anchorEl}
-                          anchorOrigin={{horizontal: 'left', vertical: 'bottom'}}
-                          targetOrigin={{horizontal: 'left', vertical: 'center'}}
-                          onRequestClose={this.handleRequestClose.bind(this)}
-                          animation={PopoverAnimationVertical}
-                          useLayerForClickAway={true}
-                      >
-                          <Menu onChange={this.filter.bind(this)}>
-                              <MenuItem value={1} primaryText="All Documents"/>
-                              <MenuItem value={2} primaryText="Owned By Me" />
-                              <MenuItem value={3} primaryText="Date Created" />
-                              <MenuItem value={4} primaryText="Oldest" />
-                          </Menu>
-                      </Popover>
-                      </div>: null}
-                  </div>
-              </div>
 
+          <div style={{display: 'flex', justifyContent: 'flex-end', marginTop: 40, marginRight: 20}}>{this.state.documents[0]._id!==0?<div>
+              <RaisedButton
+                  onTouchTap={this.handleTouchTap.bind(this)}
+                  secondary={true}
+                  label="Filter"
+              />
+              <Popover
+                  open={this.state.isOpen}
+                  anchorEl={this.state.anchorEl}
+                  anchorOrigin={{horizontal: 'left', vertical: 'bottom'}}
+                  targetOrigin={{horizontal: 'left', vertical: 'center'}}
+                  onRequestClose={this.handleRequestClose.bind(this)}
+                  animation={PopoverAnimationVertical}
+                  useLayerForClickAway={true}
+              >
+                  <Menu onChange={this.filter.bind(this)}>
+                      <MenuItem value={1} primaryText="All Documents"/>
+                      <MenuItem value={2} primaryText="Owned By Me" />
+                      <MenuItem value={3} primaryText="Date Created" />
+                      <MenuItem value={4} primaryText="Oldest" />
+                  </Menu>
+              </Popover>
+          </div>: null}
+          </div>
+          <div style={{marginRight: 30, marginLeft: 30}}>
               {this.state.documents.map((doc, i)=>
                   <div key={i} style={{backgroundColor: 'white'}}>
                       <List>
-                        {doc._id ?
-                          <ListItem
-                              key={i}
-                              leftAvatar={<Avatar icon={<ActionAssignment />} backgroundColor={blue500} />}
-                              rightIcon={<ActionInfo />}
-                              primaryText={doc.title}
-                              // onMouseDown={(e)=>this}
-                              onTouchTap={() => {
-                                  var permissions = doc.password !== "" ? false : true;
-                                  var selectedDoc = {password: doc.password, id: doc._id, title: doc.title, author: doc.author, collaborators: doc.collaborators, userPermitted: permissions}
-                                  this.setState({selectedDoc: selectedDoc}, function(){
-                                      this.onModalOpen('isPassModalOpen')
-                                  })}}
-                              secondaryText={new Date(parseInt(doc.dateCreated)).toLocaleString()}
-                          />:
-                          <div key={i} style={{textAlign: 'center'}}>You current do not have any documents...</div>}
+                          {doc._id ?
+                              <ListItem
+                                  key={i}
+                                  //   style={{padding: 0}}
+                                  leftAvatar={<Avatar icon={<ActionAssignment />} backgroundColor={'#FFC107'} />}
+                                  rightIcon={<ActionInfo />}
+                                  primaryText={<div className='directoryDocTitle'>{doc.title}</div>}
+                                  // onMouseDown={(e)=>this}
+                                  onTouchTap={() => {
+                                      var permissions = doc.password !== "" ? false : true;
+                                      var selectedDoc = {password: doc.password, id: doc._id, title: doc.title, author: doc.author, collaborators: doc.collaborators, userPermitted: permissions}
+                                      this.setState({selectedDoc: selectedDoc}, function(){
+                                          this.onModalOpen('isPassModalOpen')
+                                      })}}
+                                  //   secondaryText={new Date(parseInt(doc.dateCreated)).toLocaleString()}
+                                  secondaryText={<div>
+                                      {new Date(parseInt(doc.dateCreated)).toLocaleString()}
+                                      <div>Created by: {doc.author.name}</div>
+                                  </div>}
+                                  secondaryTextLines={2}
+                              />:
+                              <div key={i} style={{textAlign: 'center'}}>You current do not have any documents...</div>}
                       </List>
                       <Divider />
                   </div>
               )}
-              <Dialog
-                  title="Enter Document Password:"
-                  // actions={actions}
-                  modal={false}
-                  open={this.state.isPassModalOpen}
-                  onRequestClose={() => this.onModalClose('isPassModalOpen')}
-              >{enterPasswordForm}</Dialog>
-              <RaisedButton label="Logout" secondary={true} onMouseDown={this.logout.bind(this)}/>
+          </div>
+          <Dialog
+              title="Enter Document Password:"
+              // actions={actions}
+              modal={false}
+              open={this.state.isPassModalOpen}
+              onRequestClose={() => this.onModalClose('isPassModalOpen')}
+          >{enterPasswordForm}</Dialog>
+
           </div>
       )
     }

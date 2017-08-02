@@ -39,15 +39,29 @@ module.exports = function(passport) {
       email: req.body.email
     });
 
-    u.save(function(err, user) {
-      if (err) {
-        console.log(err);
+    User.find({email: req.body.email}, function(err, user){
+      if(err) {
+        console.log("Error in register", err);
         res.status(500).redirect('/register');
         return;
       }
-      console.log(user);
-      res.status(200).json({success:true, user: user});
-    });
+      if(user) {
+        console.log("User exists")
+        res.redirect('/login');
+      }
+      else {
+        u.save(function(err, user) {
+          if (err) {
+            console.log(err);
+            res.status(500).redirect('/register');
+            return;
+          }
+          console.log(user);
+          res.status(200).json({success:true, user: user});
+        });
+      }
+
+    })
   });
 
   // GET Login page

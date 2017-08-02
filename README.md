@@ -31,3 +31,6 @@ ReactGoogleDocs uses React to manage document state enabling users to view colla
 * Secure documents with passwords
 * Auto-saving
 
+
+
+![](https://cl.ly/2d211U3z1q2U/Screen%20Recording%202017-08-01%20at%2008.44%20PM.gif)
